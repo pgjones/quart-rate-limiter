@@ -5,7 +5,13 @@ Quart-Rate-Limiter
 
 Quart-Rate-Limiter is an extension for `Quart
 <https://gitlab.com/pgjones/quart>`_ to allow for rate limits to be
-defined and enforced on a per route basis.
+defined and enforced on a per route basis. The 429 error response
+includes a `RFC7231
+<https://tools.ietf.org/html/rfc7231#section-7.1.3>`_ compliant
+``Retry-After`` header and the successful responses contain headers
+compliant with the `RateLimit Header Fields for HTTP
+<https://tools.ietf.org/html/draft-polli-ratelimit-headers-00>`_ RFC
+draft.
 
 Usage
 -----
