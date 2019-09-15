@@ -1,10 +1,11 @@
-from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Awaitable, Callable, Dict, List, Optional, Type
+from typing import Awaitable, Callable, List, Optional, Type
 
 from quart import current_app, Quart, request, Response
 from quart.exceptions import HTTPException
+
+from .store import MemoryStore, RateLimiterStoreABC
 
 QUART_RATE_LIMITER_ATTRIBUTE = "_quart_rate_limiter_limits"
 
@@ -24,45 +25,6 @@ class RateLimitExceeded(HTTPException):
 
     def get_headers(self) -> dict:
         return {"Retry-After": str(self.retry_after)}
-
-
-class RateLimiterStoreABC(metaclass=ABCMeta):
-    @abstractmethod
-    async def get(self, key: str, default: datetime) -> datetime:
-        """Get the TAT for the given *key* if present or the *default* if not.
-
-        Arguments:
-            key: The key to indentify the TAT.
-            default: If no TAT for the *key* is available, return this
-                default.
-
-        Returns:
-            A Theoretical Arrival Time, TAT.
-        """
-        pass
-
-    @abstractmethod
-    async def set(self, key: str, tat: datetime) -> None:
-        """Set the TAT for the given *key*.
-
-        Arguments:
-            key: The key to indentify the TAT.
-            tat: The TAT value to set.
-        """
-        pass
-
-
-class MemoryStore(RateLimiterStoreABC):
-    """An in memory store of rate limits."""
-
-    def __init__(self) -> None:
-        self._tats: Dict[str, datetime] = {}
-
-    async def get(self, key: str, default: datetime) -> datetime:
-        return self._tats.get(key, default)
-
-    async def set(self, key: str, tat: datetime) -> None:
-        self._tats[key] = tat
 
 
 @dataclass
@@ -180,6 +142,14 @@ class RateLimiter:
     def init_app(self, app: Quart) -> None:
         app.before_request(self._before_request)
         app.after_request(self._after_request)
+        app.before_serving(self._before_serving)
+        app.after_serving(self._after_serving)
+
+    async def _before_serving(self) -> None:
+        await self.store.before_serving()
+
+    async def _after_serving(self) -> None:
+        await self.store.after_serving()
 
     async def _before_request(self) -> None:
         endpoint = request.endpoint

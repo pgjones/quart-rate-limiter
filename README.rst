@@ -43,6 +43,26 @@ To alter the identification of remote users you can either supply a
 global key function when initialising the extension, or on a per route
 basis.
 
+By default rate limiting information (TATs) will be stored in memory,
+which will result in unexpected behaviour if multiple workers are
+used. To solve this a redis store can be used by installing the
+``redis`` extra (``pip install quart-rate-limiter[redis]``) and then
+using as so,
+
+.. code-block:: python
+
+    from quart_rate_limiter.redis_store import RedisStore
+
+    redis_store = RedisStore(address)
+    RateLimiter(app, store=redis_store)
+
+This store uses `aioredis <https://github.com/aio-libs/aioredis>`_,
+and any extra keyword arguments passed to the ``RedisStore``
+constructor will be passed to the aioredis ``create_redis`` function.
+
+A custom store is possible, see the ``RateLimiterStoreABC`` for the
+required interface.
+
 Simple examples
 ~~~~~~~~~~~~~~~
 

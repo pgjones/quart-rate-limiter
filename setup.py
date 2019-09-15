@@ -40,6 +40,9 @@ setup(
     packages=find_packages(exclude=["tests", "tests.*"]),
     py_modules=["quart_rate_limiter"],
     install_requires=INSTALL_REQUIRES,
+    extras_require={
+        "redis": ["aioredis"],
+    },
     tests_require=INSTALL_REQUIRES + [
         "pytest",
         "pytest-asyncio",
