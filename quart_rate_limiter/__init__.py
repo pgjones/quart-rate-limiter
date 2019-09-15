@@ -192,11 +192,9 @@ class RateLimiter:
             tat = max(await self.store.get(key, now), now)
             separation = (tat - now).total_seconds()
             remaining = int((min_limit.period.total_seconds() - separation) / min_limit.inverse)
-            max_interval = min_limit.period.total_seconds() - min_limit.inverse
-            reset = int(((tat - timedelta(seconds=max_interval)) - now).total_seconds())
             response.headers["RateLimit-Limit"] = str(min_limit.count)
             response.headers["RateLimit-Remaining"] = str(remaining)
-            response.headers["RateLimit-Reset"] = str(reset)
+            response.headers["RateLimit-Reset"] = str(int(separation))
         return response
 
     async def _create_key(self, endpoint: str, rate_limit: RateLimit) -> str:
