@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Awaitable, Callable, List, Optional, Type
+from typing import Awaitable, Callable, List, Optional
 
 from quart import current_app, Quart, request, Response
 from quart.exceptions import HTTPException
@@ -115,8 +115,6 @@ class RateLimiter:
     Arguments:
         key_function: A coroutine function that returns a unique key
             to identify the user agent.
-        rate_limit_exception: A type of exception to raise if the rate
-            limit has been exceeded.
         store: The store that contains the theoretical arrival times by
             key.
     """
@@ -125,11 +123,9 @@ class RateLimiter:
         self,
         app: Optional[Quart] = None,
         key_function: KeyCallable = remote_addr_key,
-        rate_limit_exception: Type[Exception] = RateLimitExceeded,
         store: Optional[RateLimiterStoreABC] = None,
     ) -> None:
         self.key_function = key_function
-        self.rate_limit_exception = rate_limit_exception
         self.store: RateLimiterStoreABC
         if store is None:
             self.store = MemoryStore()
@@ -170,7 +166,7 @@ class RateLimiter:
             max_interval = rate_limit.period.total_seconds() - rate_limit.inverse
             if separation > max_interval:
                 retry_after = ((tat - timedelta(seconds=max_interval)) - now).total_seconds()
-                raise self.rate_limit_exception(int(retry_after))
+                raise RateLimitExceeded(int(retry_after))
 
     async def _update_limits(self, endpoint: str, rate_limits: List[RateLimit]) -> None:
         # Update the tats for all the rate limits. This must only
