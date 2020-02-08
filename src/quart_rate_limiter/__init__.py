@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import Awaitable, Callable, List, Optional
 
 from quart import current_app, Quart, request, Response
-from quart.exceptions import HTTPException
+from quart.exceptions import TooManyRequests
 
 from .store import MemoryStore, RateLimiterStoreABC
 
@@ -12,7 +12,7 @@ QUART_RATE_LIMITER_ATTRIBUTE = "_quart_rate_limiter_limits"
 KeyCallable = Callable[[], Awaitable[str]]
 
 
-class RateLimitExceeded(HTTPException):
+class RateLimitExceeded(TooManyRequests):
     """A 429 Rate limit exceeded error.
 
     Arguments:
@@ -20,7 +20,7 @@ class RateLimitExceeded(HTTPException):
     """
 
     def __init__(self, retry_after: int) -> None:
-        super().__init__(429, "Rate Limit Exceeded", "RATE_LIMIT_EXCEEDED")
+        super().__init__()
         self.retry_after = retry_after
 
     def get_headers(self) -> dict:

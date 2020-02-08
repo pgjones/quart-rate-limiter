@@ -12,7 +12,7 @@ from quart_rate_limiter import rate_limit, RateLimiter
 def _fixed_datetime(monkeypatch: MonkeyPatch) -> datetime:
     class MockDatetime(datetime):
         @classmethod
-        def utcnow(cls) -> datetime:
+        def utcnow(cls) -> datetime:  # type: ignore
             return datetime(2019, 3, 4)
 
     monkeypatch.setattr(quart_rate_limiter, "datetime", MockDatetime)
