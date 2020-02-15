@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Awaitable, Callable, List, Optional
+from typing import Awaitable, Callable, List, Optional, Tuple
 
 from quart import current_app, Quart, request, Response
 from quart.exceptions import TooManyRequests
@@ -117,6 +117,10 @@ class RateLimiter:
             to identify the user agent.
         store: The store that contains the theoretical arrival times by
             key.
+        default_limits: A sequence of 2-tuples of (number of attempts,
+            time period), these become the default rate limits for all
+            routes in addition to those set manually using the rate_limit
+            decorator. They will also use the instance's key_function.
     """
 
     def __init__(
@@ -124,6 +128,7 @@ class RateLimiter:
         app: Optional[Quart] = None,
         key_function: KeyCallable = remote_addr_key,
         store: Optional[RateLimiterStoreABC] = None,
+        default_limits: List[Tuple[int, timedelta]] = None,
     ) -> None:
         self.key_function = key_function
         self.store: RateLimiterStoreABC
@@ -132,8 +137,21 @@ class RateLimiter:
         else:
             self.store = store
 
+        self._default_rate_limits = []
+        if default_limits is not None:
+            self._default_rate_limits = [
+                RateLimit(limit, period, self.key_function) for limit, period in default_limits
+            ]
+
         if app is not None:
             self.init_app(app)
+
+    def _get_limits_for_view_function(self, view_func: Callable) -> List[RateLimit]:
+        rate_limits: List[RateLimit] = getattr(view_func, QUART_RATE_LIMITER_ATTRIBUTE, [])
+        if self._default_rate_limits:
+            rate_limits.extend(self._default_rate_limits)
+
+        return rate_limits
 
     def init_app(self, app: Quart) -> None:
         app.before_request(self._before_request)
@@ -151,7 +169,7 @@ class RateLimiter:
         endpoint = request.endpoint
         view_func = current_app.view_functions.get(endpoint)
         if view_func is not None:
-            rate_limits: List[RateLimit] = getattr(view_func, QUART_RATE_LIMITER_ATTRIBUTE, [])
+            rate_limits = self._get_limits_for_view_function(view_func)
             await self._raise_on_rejection(endpoint, rate_limits)
             await self._update_limits(endpoint, rate_limits)
 
@@ -181,7 +199,7 @@ class RateLimiter:
     async def _after_request(self, response: Response) -> Response:
         endpoint = request.endpoint
         view_func = current_app.view_functions.get(endpoint)
-        rate_limits: List[RateLimit] = getattr(view_func, QUART_RATE_LIMITER_ATTRIBUTE, [])
+        rate_limits = self._get_limits_for_view_function(view_func)
         try:
             min_limit = min(rate_limits, key=lambda rate_limit: rate_limit.period.total_seconds())
         except ValueError:
@@ -195,6 +213,7 @@ class RateLimiter:
             response.headers["RateLimit-Limit"] = str(min_limit.count)
             response.headers["RateLimit-Remaining"] = str(remaining)
             response.headers["RateLimit-Reset"] = str(int(separation))
+
         return response
 
     async def _create_key(self, endpoint: str, rate_limit: RateLimit) -> str:

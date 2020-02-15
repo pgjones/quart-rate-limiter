@@ -54,3 +54,29 @@ async def test_rate_limit_unique_keys(app: Quart, fixed_datetime: datetime) -> N
     assert response.status_code == 200
     response = await test_client.get("/rate_limit/", headers={"Remote-Addr": "127.0.0.2"})
     assert response.status_code == 200
+
+
+@pytest.fixture(name="app_default_limit")
+def _app_default_limit() -> Quart:
+    app = Quart(__name__)
+
+    @app.route("/")
+    async def index() -> ResponseReturnValue:
+        return ""
+
+    RateLimiter(app, default_limits=[(1, timedelta(seconds=2))])
+    return app
+
+
+@pytest.mark.asyncio
+async def test_default_rate_limits(app_default_limit: Quart, fixed_datetime: datetime) -> None:
+    test_client = app_default_limit.test_client()
+    response = await test_client.get("/")
+    assert response.status_code == 200
+    assert response.headers["RateLimit-Limit"] == "1"
+    assert response.headers["RateLimit-Remaining"] == "0"
+    assert response.headers["RateLimit-Reset"] == "2"
+
+    response = await test_client.get("/")
+    assert response.status_code == 429
+    assert response.headers["Retry-After"] == "2"
