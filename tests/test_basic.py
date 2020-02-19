@@ -5,7 +5,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from quart import Quart, ResponseReturnValue
 
 import quart_rate_limiter
-from quart_rate_limiter import rate_limit, RateLimiter
+from quart_rate_limiter import rate_limit, RateLimit, RateLimiter
 
 
 @pytest.fixture(name="fixed_datetime")
@@ -64,7 +64,8 @@ def _app_default_limit() -> Quart:
     async def index() -> ResponseReturnValue:
         return ""
 
-    RateLimiter(app, default_limits=[(1, timedelta(seconds=2))])
+    rate_limit = RateLimit(1, timedelta(seconds=2))
+    RateLimiter(app, default_limits=[rate_limit])
     return app
 
 

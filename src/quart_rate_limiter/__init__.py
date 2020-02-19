@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Awaitable, Callable, List, Optional, Tuple
+from typing import Awaitable, Callable, List, Optional
 
 from quart import current_app, Quart, request, Response
 from quart.exceptions import TooManyRequests
@@ -31,7 +31,7 @@ class RateLimitExceeded(TooManyRequests):
 class RateLimit:
     count: int
     period: timedelta
-    key_function: Optional[KeyCallable]
+    key_function: Optional[KeyCallable] = None
 
     @property
     def inverse(self) -> float:
@@ -117,10 +117,10 @@ class RateLimiter:
             to identify the user agent.
         store: The store that contains the theoretical arrival times by
             key.
-        default_limits: A sequence of 2-tuples of (number of attempts,
-            time period), these become the default rate limits for all
-            routes in addition to those set manually using the rate_limit
-            decorator. They will also use the instance's key_function.
+        default_limits: A sequence of instances of RateLimit, these become
+            the default rate limits for all routes in addition to those set
+            manually using the rate_limit decorator. They will also use the
+            RateLimiter's key_function if none is supplied.
     """
 
     def __init__(
@@ -128,7 +128,7 @@ class RateLimiter:
         app: Optional[Quart] = None,
         key_function: KeyCallable = remote_addr_key,
         store: Optional[RateLimiterStoreABC] = None,
-        default_limits: List[Tuple[int, timedelta]] = None,
+        default_limits: List[RateLimit] = None,
     ) -> None:
         self.key_function = key_function
         self.store: RateLimiterStoreABC
@@ -137,20 +137,14 @@ class RateLimiter:
         else:
             self.store = store
 
-        self._default_rate_limits = []
-        if default_limits is not None:
-            self._default_rate_limits = [
-                RateLimit(limit, period, self.key_function) for limit, period in default_limits
-            ]
+        self._default_rate_limits = default_limits or []
 
         if app is not None:
             self.init_app(app)
 
     def _get_limits_for_view_function(self, view_func: Callable) -> List[RateLimit]:
         rate_limits: List[RateLimit] = getattr(view_func, QUART_RATE_LIMITER_ATTRIBUTE, [])
-        if self._default_rate_limits:
-            rate_limits.extend(self._default_rate_limits)
-
+        rate_limits.extend(self._default_rate_limits)
         return rate_limits
 
     def init_app(self, app: Quart) -> None:
