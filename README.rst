@@ -125,7 +125,7 @@ This README is the best place to start, after that try opening an
 `issue <https://gitlab.com/pgjones/quart-rate-limiter/issues>`_.
 
 
-.. |Build Status| image:: https://gitlab.com/pgjones/quart-rate-limiter/badges/master/build.svg
+.. |Build Status| image:: https://gitlab.com/pgjones/quart-rate-limiter/badges/master/pipeline.svg
    :target: https://gitlab.com/pgjones/quart-rate-limiter/commits/master
 
 .. |pypi| image:: https://img.shields.io/pypi/v/quart-rate-limiter.svg
