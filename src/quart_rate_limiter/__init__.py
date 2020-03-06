@@ -1,8 +1,9 @@
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Awaitable, Callable, List, Optional
+from typing import Awaitable, Callable, Dict, List, Optional
 
-from quart import current_app, Quart, request, Response
+from quart import Blueprint, current_app, Quart, request, Response
 from quart.exceptions import TooManyRequests
 
 from .store import MemoryStore, RateLimiterStoreABC
@@ -83,6 +84,40 @@ def rate_limit(
     return decorator
 
 
+def limit_blueprint(
+    blueprint: Blueprint, limit: int, period: timedelta, key_function: Optional[KeyCallable] = None
+) -> Blueprint:
+    """A function to add a rate limit marker to the blueprint.
+
+    This should be used to apply a rate limit to all routes registered
+    on the blueprint.
+
+    .. code-block:: python
+
+        blueprint = Blueprint("name", __name__)
+        limit_blueprint(blueprint, 10, timedelta(seconds=10))
+
+    Arguments:
+        blueprint: The blueprint to limit.
+        limit: The maximum number of requests to serve within a
+            period.
+        period: The duration over which the number of requests must
+            not exceed the *limit*.
+        key_function: A coroutine function that returns a unique key
+            to identify the user agent.
+
+    .. code-block:: python
+
+        async def example_key_function() -> str:
+            return request.remote_addr
+
+    """
+    rate_limits = getattr(blueprint, QUART_RATE_LIMITER_ATTRIBUTE, [])
+    rate_limits.append(RateLimit(limit, period, key_function))
+    setattr(blueprint, QUART_RATE_LIMITER_ATTRIBUTE, rate_limits)
+    return blueprint
+
+
 async def remote_addr_key() -> str:
     return request.remote_addr
 
@@ -138,12 +173,16 @@ class RateLimiter:
             self.store = store
 
         self._default_rate_limits = default_limits or []
+        self._blueprint_rate_limits: Dict[str, List[RateLimit]] = defaultdict(list)
 
         if app is not None:
             self.init_app(app)
 
-    def _get_limits_for_view_function(self, view_func: Callable) -> List[RateLimit]:
+    def _get_limits_for_view_function(
+        self, view_func: Callable, blueprint: Optional[Blueprint]
+    ) -> List[RateLimit]:
         rate_limits: List[RateLimit] = getattr(view_func, QUART_RATE_LIMITER_ATTRIBUTE, [])
+        rate_limits.extend(getattr(blueprint, QUART_RATE_LIMITER_ATTRIBUTE, []))
         rate_limits.extend(self._default_rate_limits)
         return rate_limits
 
@@ -162,8 +201,9 @@ class RateLimiter:
     async def _before_request(self) -> None:
         endpoint = request.endpoint
         view_func = current_app.view_functions.get(endpoint)
+        blueprint = current_app.blueprints.get(request.blueprint)
         if view_func is not None:
-            rate_limits = self._get_limits_for_view_function(view_func)
+            rate_limits = self._get_limits_for_view_function(view_func, blueprint)
             await self._raise_on_rejection(endpoint, rate_limits)
             await self._update_limits(endpoint, rate_limits)
 
@@ -193,7 +233,8 @@ class RateLimiter:
     async def _after_request(self, response: Response) -> Response:
         endpoint = request.endpoint
         view_func = current_app.view_functions.get(endpoint)
-        rate_limits = self._get_limits_for_view_function(view_func)
+        blueprint = current_app.blueprints.get(request.blueprint)
+        rate_limits = self._get_limits_for_view_function(view_func, blueprint)
         try:
             min_limit = min(rate_limits, key=lambda rate_limit: rate_limit.period.total_seconds())
         except ValueError:
