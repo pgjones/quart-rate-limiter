@@ -1,3 +1,11 @@
+0.3.0 2020-03-07
+----------------
+
+* Add optional default limits to be applied to all routes.
+* Allow for an entire blueprint to be limited.
+* Allow a list of limits when adding rate limits (rather than using
+  multiple decorators).
+
 0.2.0 2020-02-09
 ----------------
 

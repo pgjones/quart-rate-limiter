@@ -17,7 +17,7 @@ INSTALL_REQUIRES = [
 
 setup(
     name="Quart-Rate-Limiter",
-    version="0.2.0",
+    version="0.3.0",
     python_requires=">=3.7.0",
     description="A Quart extension to provide rate limiting support.",
     long_description=long_description,
