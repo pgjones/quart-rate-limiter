@@ -53,6 +53,15 @@ Or to apply rate limits to all routes within a blueprint by using the
     blueprint = Blueprint("name", __name__)
     limit_blueprint(blueprint, 1, timedelta(seconds=10))
 
+Or to apply rate limits to all routes in an app, define the default
+limits when initialising the RateLimiter,
+
+.. code-block:: python
+
+    rate_limiter = RateLimiter(
+        default_limits=[RateLimit(1, timedelta(seconds=10))]
+    )
+
 To alter the identification of remote users you can either supply a
 global key function when initialising the extension, or on a per route
 basis.
@@ -90,11 +99,19 @@ To limit a route to 1 request per second and a maximum of 20 per minute,
     async def handler():
         ...
 
-To limit all routes in the app to 1 request per second,
+Alternatively the ``limits`` argument can be used for multiple limits,
 
 .. code-block:: python
 
-    RateLimiter(app, default_limits=RateLimit(1, timedelta(seconds=1)))
+    @app.route('/')
+    @rate_limit(
+        limits=[
+            RateLimit(1, timedelta(seconds=1)),
+            RateLimit(20, timedelta(minutes=1)),
+        ],
+    )
+    async def handler():
+        ...
 
 To identify remote users based on the forwarded IP, rather than the
 direct IP (if behind a load balancer),
