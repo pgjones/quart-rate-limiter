@@ -44,7 +44,11 @@ class RateLimit:
 
 
 def rate_limit(
-    limit: int, period: timedelta, key_function: Optional[KeyCallable] = None
+    limit: Optional[int] = None,
+    period: Optional[timedelta] = None,
+    key_function: Optional[KeyCallable] = None,
+    *,
+    limits: Optional[List[RateLimit]] = None,
 ) -> Callable:
     """A decorator to add a rate limit marker to the route.
 
@@ -67,6 +71,8 @@ def rate_limit(
             not exceed the *limit*.
         key_function: A coroutine function that returns a unique key
             to identify the user agent.
+        limits: Optional list of limits to use. Use instead of limit
+            & period,
 
     .. code-block:: python
 
@@ -74,10 +80,16 @@ def rate_limit(
             return request.remote_addr
 
     """
+    if limit is not None or period is not None:
+        if limits is not None:
+            raise ValueError("Please use either limit & period or limits")
+        limits = [RateLimit(limit, period, key_function)]
+    if limits is None:
+        raise ValueError("No Rate Limit(s) set")
 
     def decorator(func: Callable) -> Callable:
         rate_limits = getattr(func, QUART_RATE_LIMITER_ATTRIBUTE, [])
-        rate_limits.append(RateLimit(limit, period, key_function))
+        rate_limits.extend(limits)
         setattr(func, QUART_RATE_LIMITER_ATTRIBUTE, rate_limits)
         return func
 
@@ -85,7 +97,12 @@ def rate_limit(
 
 
 def limit_blueprint(
-    blueprint: Blueprint, limit: int, period: timedelta, key_function: Optional[KeyCallable] = None
+    blueprint: Blueprint,
+    limit: Optional[int] = None,
+    period: Optional[timedelta] = None,
+    key_function: Optional[KeyCallable] = None,
+    *,
+    limits: Optional[List[RateLimit]] = None,
 ) -> Blueprint:
     """A function to add a rate limit marker to the blueprint.
 
@@ -105,6 +122,8 @@ def limit_blueprint(
             not exceed the *limit*.
         key_function: A coroutine function that returns a unique key
             to identify the user agent.
+        limits: Optional list of limits to use. Use instead of limit
+            & period,
 
     .. code-block:: python
 
@@ -112,8 +131,15 @@ def limit_blueprint(
             return request.remote_addr
 
     """
+    if limit is not None or period is not None:
+        if limits is not None:
+            raise ValueError("Please use either limit & period or limits")
+        limits = [RateLimit(limit, period, key_function)]
+    if limits is None:
+        raise ValueError("No Rate Limit(s) set")
+
     rate_limits = getattr(blueprint, QUART_RATE_LIMITER_ATTRIBUTE, [])
-    rate_limits.append(RateLimit(limit, period, key_function))
+    rate_limits.extend(limits)
     setattr(blueprint, QUART_RATE_LIMITER_ATTRIBUTE, rate_limits)
     return blueprint
 
