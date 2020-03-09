@@ -5,7 +5,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from quart import Blueprint, Quart, ResponseReturnValue
 
 import quart_rate_limiter
-from quart_rate_limiter import limit_blueprint, rate_limit, RateLimit, RateLimiter
+from quart_rate_limiter import limit_blueprint, rate_exempt, rate_limit, RateLimit, RateLimiter
 
 
 @pytest.fixture(name="fixed_datetime")
@@ -64,6 +64,11 @@ def _app_default_limit() -> Quart:
     async def index() -> ResponseReturnValue:
         return ""
 
+    @app.route("/exempt")
+    @rate_exempt
+    async def exempt() -> ResponseReturnValue:
+        return ""
+
     rate_limit = RateLimit(1, timedelta(seconds=2))
     RateLimiter(app, default_limits=[rate_limit])
     return app
@@ -81,6 +86,18 @@ async def test_default_rate_limits(app_default_limit: Quart, fixed_datetime: dat
     response = await test_client.get("/")
     assert response.status_code == 429
     assert response.headers["Retry-After"] == "2"
+
+
+@pytest.mark.asyncio
+async def test_rate_exempt(app_default_limit: Quart) -> None:
+    test_client = app_default_limit.test_client()
+    response = await test_client.get("/exempt")
+    assert "RateLimit-Limit" not in response.headers
+    assert "RateLimit-Remaining" not in response.headers
+    assert "RateLimit-Reset" not in response.headers
+
+    response = await test_client.get("/exempt")
+    assert response.status_code == 200
 
 
 @pytest.fixture(name="app_blueprint_limit")

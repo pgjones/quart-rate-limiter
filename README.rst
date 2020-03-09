@@ -62,6 +62,16 @@ limits when initialising the RateLimiter,
         default_limits=[RateLimit(1, timedelta(seconds=10))]
     )
 
+and then to exempt a route,
+
+.. code-block:: python
+
+    @app.route("/exempt")
+    @rate_exempt
+    async def handler():
+        ...
+
+
 To alter the identification of remote users you can either supply a
 global key function when initialising the extension, or on a per route
 basis.

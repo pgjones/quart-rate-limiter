@@ -8,7 +8,8 @@ from quart.exceptions import TooManyRequests
 
 from .store import MemoryStore, RateLimiterStoreABC
 
-QUART_RATE_LIMITER_ATTRIBUTE = "_quart_rate_limiter_limits"
+QUART_RATE_LIMITER_LIMITS_ATTRIBUTE = "_quart_rate_limiter_limits"
+QUART_RATE_LIMITER_EXEMPT_ATTRIBUTE = "_quart_rate_limiter_exempt"
 
 KeyCallable = Callable[[], Awaitable[str]]
 
@@ -88,12 +89,31 @@ def rate_limit(
         raise ValueError("No Rate Limit(s) set")
 
     def decorator(func: Callable) -> Callable:
-        rate_limits = getattr(func, QUART_RATE_LIMITER_ATTRIBUTE, [])
+        rate_limits = getattr(func, QUART_RATE_LIMITER_LIMITS_ATTRIBUTE, [])
         rate_limits.extend(limits)
-        setattr(func, QUART_RATE_LIMITER_ATTRIBUTE, rate_limits)
+        setattr(func, QUART_RATE_LIMITER_LIMITS_ATTRIBUTE, rate_limits)
         return func
 
     return decorator
+
+
+def rate_exempt(func: Callable) -> Callable:
+    """A decorator to mark the route as exempt from rate limits.
+
+    This should be used to wrap a route handler (or view function) to
+    ensure no rate limits are applied to the route. Note that it is
+    important that this decorator be wrapped by the route decorator
+    and not vice, versa, as below.
+
+    .. code-block:: python
+
+        @app.route('/')
+        @rate_exempt
+        async def index():
+            ...
+    """
+    setattr(func, QUART_RATE_LIMITER_EXEMPT_ATTRIBUTE, True)
+    return func
 
 
 def limit_blueprint(
@@ -138,9 +158,9 @@ def limit_blueprint(
     if limits is None:
         raise ValueError("No Rate Limit(s) set")
 
-    rate_limits = getattr(blueprint, QUART_RATE_LIMITER_ATTRIBUTE, [])
+    rate_limits = getattr(blueprint, QUART_RATE_LIMITER_LIMITS_ATTRIBUTE, [])
     rate_limits.extend(limits)
-    setattr(blueprint, QUART_RATE_LIMITER_ATTRIBUTE, rate_limits)
+    setattr(blueprint, QUART_RATE_LIMITER_LIMITS_ATTRIBUTE, rate_limits)
     return blueprint
 
 
@@ -207,10 +227,15 @@ class RateLimiter:
     def _get_limits_for_view_function(
         self, view_func: Callable, blueprint: Optional[Blueprint]
     ) -> List[RateLimit]:
-        rate_limits: List[RateLimit] = getattr(view_func, QUART_RATE_LIMITER_ATTRIBUTE, [])
-        rate_limits.extend(getattr(blueprint, QUART_RATE_LIMITER_ATTRIBUTE, []))
-        rate_limits.extend(self._default_rate_limits)
-        return rate_limits
+        if getattr(view_func, QUART_RATE_LIMITER_EXEMPT_ATTRIBUTE, False):
+            return []
+        else:
+            rate_limits: List[RateLimit] = getattr(
+                view_func, QUART_RATE_LIMITER_LIMITS_ATTRIBUTE, []
+            )
+            rate_limits.extend(getattr(blueprint, QUART_RATE_LIMITER_LIMITS_ATTRIBUTE, []))
+            rate_limits.extend(self._default_rate_limits)
+            return rate_limits
 
     def init_app(self, app: Quart) -> None:
         app.before_request(self._before_request)
