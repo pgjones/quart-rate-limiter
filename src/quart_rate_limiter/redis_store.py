@@ -27,10 +27,10 @@ class RedisStore(RateLimiterStoreABC):
         if result is None:
             return default
         else:
-            return result
+            return datetime.fromtimestamp(result)
 
     async def set(self, key: str, tat: datetime) -> None:
-        await self._redis.set(key, tat)
+        await self._redis.set(key, tat.timestamp())
 
     async def after_serving(self) -> None:
         self._redis.close()
