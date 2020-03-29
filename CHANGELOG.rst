@@ -1,3 +1,9 @@
+0.4.0 2020-03-29
+----------------
+
+* Allow routes to be marked as rate exempt.
+* Bugfix redis storage type.
+
 0.3.0 2020-03-07
 ----------------
 
