@@ -27,7 +27,7 @@ class RedisStore(RateLimiterStoreABC):
         if result is None:
             return default
         else:
-            return datetime.fromtimestamp(result)
+            return datetime.fromtimestamp(float(result))
 
     async def set(self, key: str, tat: datetime) -> None:
         await self._redis.set(key, tat.timestamp())
