@@ -1,36 +1,9 @@
 from datetime import datetime, timedelta
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 from quart import Blueprint, Quart, ResponseReturnValue
 
-import quart_rate_limiter
-from quart_rate_limiter import limit_blueprint, rate_exempt, rate_limit, RateLimit, RateLimiter
-
-
-@pytest.fixture(name="fixed_datetime")
-def _fixed_datetime(monkeypatch: MonkeyPatch) -> datetime:
-    class MockDatetime(datetime):
-        @classmethod
-        def utcnow(cls) -> datetime:  # type: ignore
-            return datetime(2019, 3, 4)
-
-    monkeypatch.setattr(quart_rate_limiter, "datetime", MockDatetime)
-    return MockDatetime.utcnow()
-
-
-@pytest.fixture(name="app")
-def _app() -> Quart:
-    app = Quart(__name__)
-
-    @app.route("/rate_limit/")
-    @rate_limit(1, timedelta(seconds=2))
-    @rate_limit(10, timedelta(seconds=20))
-    async def index() -> ResponseReturnValue:
-        return ""
-
-    RateLimiter(app)
-    return app
+from quart_rate_limiter import limit_blueprint, rate_exempt, RateLimit, RateLimiter
 
 
 @pytest.mark.asyncio

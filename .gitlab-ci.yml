@@ -12,6 +12,10 @@ py38:
 
 py39:
   image: python:3.9
+
+  services:
+  - redis:latest
+
   script:
   - pip install tox
-  - tox -e format,mypy,py39,pep8,setuppy,manifest
+  - tox -e format,mypy,py39,pep8,setuppy,manifest,redis
