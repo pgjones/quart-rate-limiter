@@ -23,9 +23,9 @@ async def test_rate_limit(app: Quart, fixed_datetime: datetime) -> None:
 @pytest.mark.asyncio
 async def test_rate_limit_unique_keys(app: Quart, fixed_datetime: datetime) -> None:
     test_client = app.test_client()
-    response = await test_client.get("/rate_limit/", headers={"Remote-Addr": "127.0.0.1"})
+    response = await test_client.get("/rate_limit/", scope_base={"client": ("127.0.0.1",)})
     assert response.status_code == 200
-    response = await test_client.get("/rate_limit/", headers={"Remote-Addr": "127.0.0.2"})
+    response = await test_client.get("/rate_limit/", scope_base={"client": ("127.0.0.2",)})
     assert response.status_code == 200
 
 

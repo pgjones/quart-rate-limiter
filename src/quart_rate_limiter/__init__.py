@@ -1,10 +1,10 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Awaitable, Callable, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from quart import Blueprint, current_app, Quart, request, Response
-from quart.exceptions import TooManyRequests
+from werkzeug.exceptions import TooManyRequests
 
 from .store import MemoryStore, RateLimiterStoreABC
 
@@ -25,7 +25,7 @@ class RateLimitExceeded(TooManyRequests):
         super().__init__()
         self.retry_after = retry_after
 
-    def get_headers(self) -> dict:
+    def get_headers(self, *_: Any) -> dict:  # type: ignore
         return {"Retry-After": str(self.retry_after)}
 
 
