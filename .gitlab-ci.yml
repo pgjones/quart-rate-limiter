@@ -18,4 +18,4 @@ py39:
 
   script:
   - pip install tox
-  - tox -e format,mypy,py39,pep8,setuppy,manifest,redis
+  - tox -e format,mypy,py39,pep8,package,redis
