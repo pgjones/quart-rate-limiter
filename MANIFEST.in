@@ -1,9 +1,0 @@
-include CHANGELOG.rst
-include LICENSE
-include pyproject.toml
-include src/quart_rate_limiter/py.typed
-include README.rst
-include setup.cfg
-recursive-include src/quart_limiter *.py
-recursive-include tests *.py
-exclude .gitlab-ci.yml
