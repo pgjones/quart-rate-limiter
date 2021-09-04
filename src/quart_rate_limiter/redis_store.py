@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Optional
 
-from aioredis import create_redis, Redis
+import aioredis
 
 from .store import RateLimiterStoreABC
 
@@ -16,11 +16,11 @@ class RedisStore(RateLimiterStoreABC):
     """
 
     def __init__(self, address: str, **kwargs: Any) -> None:
-        self._redis: Optional[Redis] = None
+        self._redis: Optional[aioredis.Redis] = None
         self._redis_arguments = (address, kwargs)
 
     async def before_serving(self) -> None:
-        self._redis = await create_redis(self._redis_arguments[0], **self._redis_arguments[1])
+        self._redis = await aioredis.from_url(self._redis_arguments[0], **self._redis_arguments[1])
 
     async def get(self, key: str, default: datetime) -> datetime:
         result = await self._redis.get(key)
@@ -33,6 +33,5 @@ class RedisStore(RateLimiterStoreABC):
         await self._redis.set(key, tat.timestamp())
 
     async def after_serving(self) -> None:
-        self._redis.close()
-        await self._redis.wait_closed()
+        await self._redis.close()
         self._redis = None
