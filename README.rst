@@ -123,15 +123,13 @@ Alternatively the ``limits`` argument can be used for multiple limits,
     async def handler():
         ...
 
-To identify remote users based on the forwarded IP, rather than the
-direct IP (if behind a load balancer),
+To identify remote users based on their authentication ID, rather than
+their IP,
 
 .. code-block:: python
 
     async def key_function():
-        # Return the X-Forwarded-For as the user-agent identifier,
-        # unless it isn't present (direct connection).
-        return request.headers.get("X-Forwarded-For", request.remote_addr)
+        return current_user.id
 
     RateLimiter(app, key_function=key_function)
 

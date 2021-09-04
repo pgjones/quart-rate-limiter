@@ -165,7 +165,7 @@ def limit_blueprint(
 
 
 async def remote_addr_key() -> str:
-    return request.remote_addr
+    return request.access_route[0]
 
 
 class RateLimiter:
