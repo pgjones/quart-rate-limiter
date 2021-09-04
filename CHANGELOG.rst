@@ -1,3 +1,10 @@
+0.6.0 2021-09-04
+----------------
+
+* Support aioredis >= 2.0.
+* Switch from remote_addr to access_route[0] for the remote key as the
+  latter is correct when proxies are involved.
+
 0.5.0 2021-05-11
 ----------------
 
