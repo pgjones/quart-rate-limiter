@@ -1,3 +1,9 @@
+0.7.0 2022-04-04
+----------------
+
+* Support an enabled flag, ``QUART_RATE_LIMITER_ENABLED`` to disable
+  all rate limiting (meant for testing).
+
 0.6.0 2021-09-04
 ----------------
 
