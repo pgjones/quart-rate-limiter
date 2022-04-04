@@ -4,7 +4,7 @@ Quart-Rate-Limiter
 |Build Status| |pypi| |python| |license|
 
 Quart-Rate-Limiter is an extension for `Quart
-<https://gitlab.com/pgjones/quart>`_ to allow for rate limits to be
+<https://github.com/pgjones/quart>`_ to allow for rate limits to be
 defined and enforced on a per route basis. The 429 error response
 includes a `RFC7231
 <https://tools.ietf.org/html/rfc7231#section-7.1.3>`_ compliant
@@ -139,11 +139,11 @@ if appropriate.
 Contributing
 ------------
 
-Quart-Rate-Limiter is developed on `GitLab
-<https://gitlab.com/pgjones/quart-rate-limiter>`_. You are very welcome to
-open `issues <https://gitlab.com/pgjones/quart-rate-limiter/issues>`_ or
+Quart-Rate-Limiter is developed on `GitHub
+<https://github.com/pgjones/quart-rate-limiter>`_. You are very welcome to
+open `issues <https://github.com/pgjones/quart-rate-limiter/issues>`_ or
 propose `merge requests
-<https://gitlab.com/pgjones/quart-rate-limiter/merge_requests>`_.
+<https://github.com/pgjones/quart-rate-limiter/merge_requests>`_.
 
 Testing
 ~~~~~~~
@@ -161,11 +161,11 @@ Help
 ----
 
 This README is the best place to start, after that try opening an
-`issue <https://gitlab.com/pgjones/quart-rate-limiter/issues>`_.
+`issue <https://github.com/pgjones/quart-rate-limiter/issues>`_.
 
 
-.. |Build Status| image:: https://gitlab.com/pgjones/quart-rate-limiter/badges/main/pipeline.svg
-   :target: https://gitlab.com/pgjones/quart-rate-limiter/commits/main
+.. |Build Status| image:: https://github.com/pgjones/quart-rate-limiter/actions/workflows/ci.yml/badge.svg
+   :target: https://github.com/pgjones/quart-rate-limiter/commits/main
 
 .. |pypi| image:: https://img.shields.io/pypi/v/quart-rate-limiter.svg
    :target: https://pypi.python.org/pypi/Quart-Rate-Limiter/
@@ -174,4 +174,4 @@ This README is the best place to start, after that try opening an
    :target: https://pypi.python.org/pypi/Quart-Rate-Limiter/
 
 .. |license| image:: https://img.shields.io/badge/license-MIT-blue.svg
-   :target: https://gitlab.com/pgjones/quart-rate-limiter/blob/main/LICENSE
+   :target: https://github.com/pgjones/quart-rate-limiter/blob/main/LICENSE

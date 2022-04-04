@@ -21,7 +21,7 @@ classifiers = [
 include = ["src/quart_rate_limiter/py.typed"]
 license = "MIT"
 readme = "README.rst"
-repository = "https://gitlab.com/pgjones/quart-rate-limiter/"
+repository = "https://github.com/pgjones/quart-rate-limiter/"
 
 [tool.black]
 line-length = 100
