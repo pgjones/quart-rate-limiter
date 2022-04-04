@@ -202,6 +202,7 @@ class RateLimiter:
             the default rate limits for all routes in addition to those set
             manually using the rate_limit decorator. They will also use the
             RateLimiter's key_function if none is supplied.
+        enabled: Set to False to disable rate limiting entirely.
     """
 
     def __init__(
@@ -210,6 +211,7 @@ class RateLimiter:
         key_function: KeyCallable = remote_addr_key,
         store: Optional[RateLimiterStoreABC] = None,
         default_limits: List[RateLimit] = None,
+        enabled: bool = True,
     ) -> None:
         self.key_function = key_function
         self.store: RateLimiterStoreABC
@@ -222,7 +224,7 @@ class RateLimiter:
         self._blueprint_rate_limits: Dict[str, List[RateLimit]] = defaultdict(list)
 
         if app is not None:
-            self.init_app(app)
+            self.init_app(app, enabled=enabled)
 
     def _get_limits_for_view_function(
         self, view_func: Callable, blueprint: Optional[Blueprint]
@@ -237,11 +239,12 @@ class RateLimiter:
             rate_limits.extend(self._default_rate_limits)
             return rate_limits
 
-    def init_app(self, app: Quart) -> None:
+    def init_app(self, app: Quart, enabled: bool = True) -> None:
         app.before_request(self._before_request)
         app.after_request(self._after_request)
         app.before_serving(self._before_serving)
         app.after_serving(self._after_serving)
+        app.config.setdefault("QUART_RATE_LIMITER_ENABLED", enabled)
 
     async def _before_serving(self) -> None:
         await self.store.before_serving()
@@ -250,6 +253,9 @@ class RateLimiter:
         await self.store.after_serving()
 
     async def _before_request(self) -> None:
+        if not current_app.config["QUART_RATE_LIMITER_ENABLED"]:
+            return
+
         endpoint = request.endpoint
         view_func = current_app.view_functions.get(endpoint)
         blueprint = current_app.blueprints.get(request.blueprint)
@@ -282,6 +288,9 @@ class RateLimiter:
             await self.store.set(key, new_tat)
 
     async def _after_request(self, response: Response) -> Response:
+        if not current_app.config["QUART_RATE_LIMITER_ENABLED"]:
+            return response
+
         endpoint = request.endpoint
         view_func = current_app.view_functions.get(endpoint)
         blueprint = current_app.blueprints.get(request.blueprint)
