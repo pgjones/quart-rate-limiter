@@ -6,7 +6,6 @@ from quart import Blueprint, Quart, ResponseReturnValue
 from quart_rate_limiter import limit_blueprint, rate_exempt, RateLimit, RateLimiter
 
 
-@pytest.mark.asyncio
 async def test_rate_limit(app: Quart, fixed_datetime: datetime) -> None:
     test_client = app.test_client()
     response = await test_client.get("/rate_limit/")
@@ -20,7 +19,6 @@ async def test_rate_limit(app: Quart, fixed_datetime: datetime) -> None:
     assert response.headers["Retry-After"] == "2"
 
 
-@pytest.mark.asyncio
 async def test_rate_limit_unique_keys(app: Quart, fixed_datetime: datetime) -> None:
     test_client = app.test_client()
     response = await test_client.get("/rate_limit/", scope_base={"client": ("127.0.0.1",)})
@@ -47,7 +45,6 @@ def _app_default_limit() -> Quart:
     return app
 
 
-@pytest.mark.asyncio
 async def test_default_rate_limits(app_default_limit: Quart, fixed_datetime: datetime) -> None:
     test_client = app_default_limit.test_client()
     response = await test_client.get("/")
@@ -61,7 +58,6 @@ async def test_default_rate_limits(app_default_limit: Quart, fixed_datetime: dat
     assert response.headers["Retry-After"] == "2"
 
 
-@pytest.mark.asyncio
 async def test_rate_exempt(app_default_limit: Quart) -> None:
     test_client = app_default_limit.test_client()
     response = await test_client.get("/exempt")
@@ -90,7 +86,6 @@ def _app_blueprint_limit() -> Quart:
     return app
 
 
-@pytest.mark.asyncio
 async def test_blueprint_rate_limits(app_blueprint_limit: Quart, fixed_datetime: datetime) -> None:
     test_client = app_blueprint_limit.test_client()
     response = await test_client.get("/")
