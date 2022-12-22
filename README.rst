@@ -89,9 +89,9 @@ using as so,
     redis_store = RedisStore(address)
     RateLimiter(app, store=redis_store)
 
-This store uses `aioredis <https://github.com/aio-libs/aioredis>`_,
+This store uses `redis <https://github.com/redis/redis-py>`_,
 and any extra keyword arguments passed to the ``RedisStore``
-constructor will be passed to the aioredis ``create_redis`` function.
+constructor will be passed to the redis ``create_redis`` function.
 
 A custom store is possible, see the ``RateLimiterStoreABC`` for the
 required interface.
