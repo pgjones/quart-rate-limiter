@@ -55,6 +55,10 @@ warn_return_any = false
 warn_unused_configs = true
 warn_unused_ignores = true
 
+[[tool.mypy.overrides]]
+module =["redis.*"]
+ignore_missing_imports = true
+
 [tool.poetry.dependencies]
 python = ">=3.7"
 quart = ">=0.15"
