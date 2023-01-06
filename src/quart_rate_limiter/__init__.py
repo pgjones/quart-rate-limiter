@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Awaitable, Callable, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 
 from quart import Blueprint, current_app, Quart, request, Response
 from werkzeug.exceptions import TooManyRequests
@@ -25,8 +25,10 @@ class RateLimitExceeded(TooManyRequests):
         super().__init__()
         self.retry_after = retry_after
 
-    def get_headers(self, *_: Any) -> dict:  # type: ignore
-        return {"Retry-After": str(self.retry_after)}
+    def get_headers(self, *args: Any) -> List[Tuple[str, str]]:
+        headers = super().get_headers(*args)
+        headers.append(("Retry-After", str(self.retry_after)))
+        return headers
 
 
 @dataclass

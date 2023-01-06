@@ -17,6 +17,7 @@ async def test_rate_limit(app: Quart, fixed_datetime: datetime) -> None:
     response = await test_client.get("/rate_limit/")
     assert response.status_code == 429
     assert response.headers["Retry-After"] == "2"
+    assert response.headers["Content-Type"] == "text/html; charset=utf-8"
 
 
 async def test_rate_limit_unique_keys(app: Quart, fixed_datetime: datetime) -> None:
