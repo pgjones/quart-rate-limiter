@@ -31,18 +31,14 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - name: update pip
-        run: |
-          pip install -U wheel
-          pip install -U setuptools
-          python -m pip install -U pip
-
       - run: pip install tox
 
       - run: tox -e ${{ matrix.tox }}
 
   redis-tox:
     runs-on: ubuntu-latest
+
+    container: python:3.11
 
     services:
       redis:
@@ -55,10 +51,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - uses: actions/setup-python@v3
-        with:
-          python-version: '3.11'
 
       - run: pip install tox
 
