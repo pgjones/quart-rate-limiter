@@ -1,9 +1,10 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 from quart import Blueprint, current_app, Quart, request, Response
+from quart.typing import RouteCallable, WebsocketCallable
 from werkzeug.exceptions import TooManyRequests
 
 from .store import MemoryStore, RateLimiterStoreABC
@@ -46,13 +47,16 @@ class RateLimit:
         return f"{self.count}-{self.period.total_seconds()}"
 
 
+T = TypeVar("T", bound=Union[RouteCallable, WebsocketCallable])
+
+
 def rate_limit(
     limit: Optional[int] = None,
     period: Optional[timedelta] = None,
     key_function: Optional[KeyCallable] = None,
     *,
     limits: Optional[List[RateLimit]] = None,
-) -> Callable:
+) -> Callable[[T], T]:
     """A decorator to add a rate limit marker to the route.
 
     This should be used to wrap a route handler (or view function) to
@@ -90,7 +94,7 @@ def rate_limit(
     if limits is None:
         raise ValueError("No Rate Limit(s) set")
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: T) -> T:
         rate_limits = getattr(func, QUART_RATE_LIMITER_LIMITS_ATTRIBUTE, [])
         rate_limits.extend(limits)
         setattr(func, QUART_RATE_LIMITER_LIMITS_ATTRIBUTE, rate_limits)
@@ -118,14 +122,17 @@ def rate_exempt(func: Callable) -> Callable:
     return func
 
 
+U = TypeVar("U", bound=Blueprint)
+
+
 def limit_blueprint(
-    blueprint: Blueprint,
+    blueprint: U,
     limit: Optional[int] = None,
     period: Optional[timedelta] = None,
     key_function: Optional[KeyCallable] = None,
     *,
     limits: Optional[List[RateLimit]] = None,
-) -> Blueprint:
+) -> U:
     """A function to add a rate limit marker to the blueprint.
 
     This should be used to apply a rate limit to all routes registered
