@@ -1,3 +1,11 @@
+0.8.0 2023-01-21
+----------------
+
+* Use redis rather than aioredis as the two have merged.
+* Bugfix ensure the Content-Type header is present.
+* Improve the typing for better type checking.
+* Officially support Python 3.10, and Python 3.11.
+
 0.7.0 2022-04-04
 ----------------
 
