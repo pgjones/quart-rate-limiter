@@ -59,6 +59,7 @@ limits when initialising the RateLimiter,
 .. code-block:: python
 
     rate_limiter = RateLimiter(
+        app,
         default_limits=[RateLimit(1, timedelta(seconds=10))]
     )
 
