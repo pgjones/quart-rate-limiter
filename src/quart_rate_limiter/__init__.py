@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
-from quart import Blueprint, current_app, Quart, request, Response
+from flask.sansio.blueprints import Blueprint
+from quart import current_app, Quart, request, Response
 from quart.typing import RouteCallable, WebsocketCallable
 from werkzeug.exceptions import TooManyRequests
 
@@ -103,7 +104,7 @@ def rate_limit(
     return decorator
 
 
-def rate_exempt(func: Callable) -> Callable:
+def rate_exempt(func: T) -> T:
     """A decorator to mark the route as exempt from rate limits.
 
     This should be used to wrap a route handler (or view function) to
