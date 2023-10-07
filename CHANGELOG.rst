@@ -1,3 +1,9 @@
+0.9.0 2023-10-07
+----------------
+
+* Officially support Python 3.12 drop Python 3.7.
+* Support Quart 0.19 onwards.
+
 0.8.0 2023-01-21
 ----------------
 
