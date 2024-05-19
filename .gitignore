@@ -4,8 +4,10 @@ __pycache__/
 Quart_Rate_Limiter.egg-info/
 .cache/
 .tox/
+TODO
 .mypy_cache/
-.hypothesis/
+docs/_build/
+docs/reference/source/
 .coverage
 .pytest_cache/
 dist/

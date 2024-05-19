@@ -61,6 +61,7 @@ module =["redis.*"]
 ignore_missing_imports = true
 
 [tool.poetry.dependencies]
+pydata_sphinx_theme = { version = "*", optional = true }
 python = ">=3.8"
 quart = ">=0.19"
 redis = { version = ">=4.4.0", optional = true }
@@ -69,6 +70,7 @@ redis = { version = ">=4.4.0", optional = true }
 tox = "*"
 
 [tool.poetry.extras]
+docs = ["pydata_sphinx_theme"]
 redis = ["redis"]
 
 [tool.pytest.ini_options]

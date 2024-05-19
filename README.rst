@@ -1,7 +1,7 @@
 Quart-Rate-Limiter
 ==================
 
-|Build Status| |pypi| |python| |license|
+|Build Status| |docs| |pypi| |python| |license|
 
 Quart-Rate-Limiter is an extension for `Quart
 <https://github.com/pgjones/quart>`_ to allow for rate limits to be
@@ -13,88 +13,21 @@ compliant with the `RateLimit Header Fields for HTTP
 <https://tools.ietf.org/html/draft-polli-ratelimit-headers-00>`_ RFC
 draft.
 
-Usage
------
+Quickstart
+----------
 
 To add a rate limit first initialise the RateLimiting extension with
-the application,
+the application, and then rate limit the route,
 
 .. code-block:: python
 
     app = Quart(__name__)
     rate_limiter = RateLimiter(app)
 
-or via the factory pattern,
-
-.. code-block:: python
-
-    rate_limiter = RateLimiter()
-
-    def create_app():
-        app = Quart(__name__)
-        rate_limiter.init_app(app)
-        return app
-
-Now this is done you can apply rate limits to any route by using the
-``rate_limit`` decorator,
-
-.. code-block:: python
-
-    @app.route('/')
+    @app.get('/')
     @rate_limit(1, timedelta(seconds=10))
     async def handler():
         ...
-
-Or to apply rate limits to all routes within a blueprint by using the
-``limit_blueprint`` function,
-
-.. code-block:: python
-
-    blueprint = Blueprint("name", __name__)
-    limit_blueprint(blueprint, 1, timedelta(seconds=10))
-
-Or to apply rate limits to all routes in an app, define the default
-limits when initialising the RateLimiter,
-
-.. code-block:: python
-
-    rate_limiter = RateLimiter(
-        default_limits=[RateLimit(1, timedelta(seconds=10))]
-    )
-
-and then to exempt a route,
-
-.. code-block:: python
-
-    @app.route("/exempt")
-    @rate_exempt
-    async def handler():
-        ...
-
-
-To alter the identification of remote users you can either supply a
-global key function when initialising the extension, or on a per route
-basis.
-
-By default rate limiting information (TATs) will be stored in memory,
-which will result in unexpected behaviour if multiple workers are
-used. To solve this a redis store can be used by installing the
-``redis`` extra (``pip install quart-rate-limiter[redis]``) and then
-using as so,
-
-.. code-block:: python
-
-    from quart_rate_limiter.redis_store import RedisStore
-
-    redis_store = RedisStore(address)
-    RateLimiter(app, store=redis_store)
-
-This store uses `redis <https://github.com/redis/redis-py>`_,
-and any extra keyword arguments passed to the ``RedisStore``
-constructor will be passed to the redis ``create_redis`` function.
-
-A custom store is possible, see the ``RateLimiterStoreABC`` for the
-required interface.
 
 Simple examples
 ~~~~~~~~~~~~~~~
@@ -160,12 +93,20 @@ this will check the code style and run the tests.
 Help
 ----
 
-This README is the best place to start, after that try opening an
-`issue <https://github.com/pgjones/quart-rate-limiter/issues>`_.
+The Quart-Rate-Limiter `documentation
+<https://quart-rate-limiter.readthedocs.io/en/latest/>`_ is the best
+places to start, after that try searching `stack overflow
+<https://stackoverflow.com/questions/tagged/quart>`_ or ask for help
+`on gitter <https://gitter.im/python-quart/lobby>`_. If you still
+can't find an answer please `open an issue
+<https://github.com/pgjones/quart-rate-limiter/issues>`_.
 
 
 .. |Build Status| image:: https://github.com/pgjones/quart-rate-limiter/actions/workflows/ci.yml/badge.svg
    :target: https://github.com/pgjones/quart-rate-limiter/commits/main
+
+.. |docs| image:: https://readthedocs.org/projects/quart-rate-limiter/badge/?version=latest&style=flat
+   :target: https://quart-rate-limiter.readthedocs.io/en/latest/
 
 .. |pypi| image:: https://img.shields.io/pypi/v/quart-rate-limiter.svg
    :target: https://pypi.python.org/pypi/Quart-Rate-Limiter/
