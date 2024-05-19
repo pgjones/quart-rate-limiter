@@ -70,6 +70,14 @@ async def test_rate_exempt(app_default_limit: Quart) -> None:
     assert response.status_code == 200
 
 
+async def test_rate_limit_skip_function(app: Quart, fixed_datetime: datetime) -> None:
+    test_client = app.test_client()
+    response = await test_client.get("/rate_limit/", headers={"X-Skip": "True"})
+    assert response.status_code == 200
+    response = await test_client.get("/rate_limit/", headers={"X-Skip": "True"})
+    assert response.status_code == 200
+
+
 @pytest.fixture(name="app_blueprint_limit")
 def _app_blueprint_limit() -> Quart:
     app = Quart(__name__)

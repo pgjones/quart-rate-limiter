@@ -9,4 +9,5 @@ How to guides
    exempt.rst
    global_limits.rst
    key.rst
+   skip.rst
    store.rst

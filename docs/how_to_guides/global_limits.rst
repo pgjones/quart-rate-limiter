@@ -7,7 +7,7 @@ individually. To do so use the ``default_limits`` argument,
 
 .. code-block:: python
 
-    RateLimit(
+    RateLimiter(
         app,
         default_limits=[
             RateLimit(1, timedelta(seconds=1)),

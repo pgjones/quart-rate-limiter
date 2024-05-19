@@ -14,6 +14,7 @@ QUART_RATE_LIMITER_LIMITS_ATTRIBUTE = "_quart_rate_limiter_limits"
 QUART_RATE_LIMITER_EXEMPT_ATTRIBUTE = "_quart_rate_limiter_exempt"
 
 KeyCallable = Callable[[], Awaitable[str]]
+SkipCallable = Callable[[], Awaitable[bool]]
 
 
 class RateLimitExceeded(TooManyRequests):
@@ -38,6 +39,7 @@ class RateLimit:
     count: int
     period: timedelta
     key_function: Optional[KeyCallable] = None
+    skip_function: Optional[SkipCallable] = None
 
     @property
     def inverse(self) -> float:
@@ -55,6 +57,7 @@ def rate_limit(
     limit: Optional[int] = None,
     period: Optional[timedelta] = None,
     key_function: Optional[KeyCallable] = None,
+    skip_function: Optional[SkipCallable] = None,
     *,
     limits: Optional[List[RateLimit]] = None,
 ) -> Callable[[T], T]:
@@ -91,7 +94,7 @@ def rate_limit(
     if limit is not None or period is not None:
         if limits is not None:
             raise ValueError("Please use either limit & period or limits")
-        limits = [RateLimit(limit, period, key_function)]
+        limits = [RateLimit(limit, period, key_function, skip_function)]
     if limits is None:
         raise ValueError("No Rate Limit(s) set")
 
@@ -131,6 +134,7 @@ def limit_blueprint(
     limit: Optional[int] = None,
     period: Optional[timedelta] = None,
     key_function: Optional[KeyCallable] = None,
+    skip_function: Optional[SkipCallable] = None,
     *,
     limits: Optional[List[RateLimit]] = None,
 ) -> U:
@@ -164,7 +168,7 @@ def limit_blueprint(
     if limit is not None or period is not None:
         if limits is not None:
             raise ValueError("Please use either limit & period or limits")
-        limits = [RateLimit(limit, period, key_function)]
+        limits = [RateLimit(limit, period, key_function, skip_function)]
     if limits is None:
         raise ValueError("No Rate Limit(s) set")
 
@@ -222,8 +226,10 @@ class RateLimiter:
         store: Optional[RateLimiterStoreABC] = None,
         default_limits: List[RateLimit] = None,
         enabled: bool = True,
+        skip_function: SkipCallable = None,
     ) -> None:
         self.key_function = key_function
+        self.skip_function = skip_function
         self.store: RateLimiterStoreABC
         if store is None:
             self.store = MemoryStore()
@@ -270,7 +276,11 @@ class RateLimiter:
         view_func = current_app.view_functions.get(endpoint)
         blueprint = current_app.blueprints.get(request.blueprint)
         if view_func is not None:
-            rate_limits = self._get_limits_for_view_function(view_func, blueprint)
+            rate_limits = [
+                limit
+                for limit in self._get_limits_for_view_function(view_func, blueprint)
+                if not await self._should_skip(limit)
+            ]
             await self._raise_on_rejection(endpoint, rate_limits)
             await self._update_limits(endpoint, rate_limits)
 
@@ -326,3 +336,10 @@ class RateLimiter:
         key = await key_function()
         app_name = current_app.import_name
         return f"{app_name}-{endpoint}-{rate_limit.key}-{key}"
+
+    async def _should_skip(self, rate_limit: RateLimit) -> bool:
+        skip_function = rate_limit.skip_function or self.skip_function
+        if skip_function is None:
+            return False
+        else:
+            return await skip_function()

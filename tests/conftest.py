@@ -5,7 +5,7 @@ import pytest
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
 from _pytest.monkeypatch import MonkeyPatch
-from quart import Quart, ResponseReturnValue
+from quart import Quart, request, ResponseReturnValue
 
 import quart_rate_limiter
 from quart_rate_limiter import rate_limit, RateLimiter
@@ -28,6 +28,10 @@ def _fixed_datetime(monkeypatch: MonkeyPatch) -> datetime:
     return MockDatetime.utcnow()
 
 
+async def _skip_function() -> bool:
+    return request.headers.get("X-Skip") == "True"
+
+
 @pytest.fixture(name="app", scope="function")
 async def _app(pytestconfig: Config) -> AsyncGenerator[Quart, None]:
     app = Quart(__name__)
@@ -45,6 +49,6 @@ async def _app(pytestconfig: Config) -> AsyncGenerator[Quart, None]:
     else:
         store = RedisStore(f"redis://{redis_host}")
 
-    RateLimiter(app, store=store)
+    RateLimiter(app, store=store, skip_function=_skip_function)
     async with app.test_app():
         yield app
