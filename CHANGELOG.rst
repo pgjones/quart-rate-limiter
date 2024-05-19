@@ -1,3 +1,8 @@
+0.10.0 2024-05-19
+-----------------
+
+* Add the ability to skip rate limits via a skip_function.
+
 0.9.0 2023-10-07
 ----------------
 
