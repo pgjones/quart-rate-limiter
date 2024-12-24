@@ -1,3 +1,9 @@
+0.11.0 2024-12-24
+-----------------
+
+* Bugfix don't continually extend limits with blueprint/defaults.
+* Support Python 3.13, drop Python 3.8.
+
 0.10.0 2024-05-19
 -----------------
 
