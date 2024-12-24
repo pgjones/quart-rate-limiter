@@ -1,8 +1,10 @@
-[tool.poetry]
+[project]
 name = "quart-rate-limiter"
 version = "0.10.0"
 description = "A Quart extension to provide rate limiting support"
-authors = ["pgjones <philip.graham.jones@googlemail.com>"]
+authors = [
+    {name = "pgjones", email = "philip.graham.jones@googlemail.com"},
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Web Environment",
@@ -20,9 +22,17 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 include = ["src/quart_rate_limiter/py.typed"]
-license = "MIT"
+license = {text = "MIT"}
 readme = "README.rst"
 repository = "https://github.com/pgjones/quart-rate-limiter/"
+dependencies = [
+    "quart >= 0.19",
+]
+requires-python = ">=3.9"
+
+[project.optional-dependencies]
+docs = ["pydata_sphinx_theme"]
+redis = ["redis >= 4.4.0"]
 
 [tool.black]
 line-length = 100
@@ -60,19 +70,6 @@ warn_unused_ignores = true
 module =["redis.*"]
 ignore_missing_imports = true
 
-[tool.poetry.dependencies]
-pydata_sphinx_theme = { version = "*", optional = true }
-python = ">=3.9"
-quart = ">=0.19"
-redis = { version = ">=4.4.0", optional = true }
-
-[tool.poetry.dev-dependencies]
-tox = "*"
-
-[tool.poetry.extras]
-docs = ["pydata_sphinx_theme"]
-redis = ["redis"]
-
 [tool.pytest.ini_options]
 addopts = "--no-cov-on-fail --showlocals --strict-markers"
 asyncio_default_fixture_loop_scope = "function"
@@ -80,5 +77,5 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 
 [build-system]
-requires = ["poetry_core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
