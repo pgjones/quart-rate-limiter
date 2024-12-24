@@ -248,12 +248,9 @@ class RateLimiter:
         if getattr(view_func, QUART_RATE_LIMITER_EXEMPT_ATTRIBUTE, False):
             return []
         else:
-            rate_limits: List[RateLimit] = getattr(
-                view_func, QUART_RATE_LIMITER_LIMITS_ATTRIBUTE, []
-            )
-            rate_limits.extend(getattr(blueprint, QUART_RATE_LIMITER_LIMITS_ATTRIBUTE, []))
-            rate_limits.extend(self._default_rate_limits)
-            return rate_limits
+            view_limits = getattr(view_func, QUART_RATE_LIMITER_LIMITS_ATTRIBUTE, [])
+            blueprint_limits = getattr(blueprint, QUART_RATE_LIMITER_LIMITS_ATTRIBUTE, [])
+            return view_limits + blueprint_limits + self._default_rate_limits
 
     def init_app(self, app: Quart, enabled: bool = True) -> None:
         app.before_request(self._before_request)
