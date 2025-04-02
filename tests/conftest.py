@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import AsyncGenerator
 
 import pytest
@@ -21,11 +21,11 @@ def pytest_addoption(parser: Parser) -> None:
 def _fixed_datetime(monkeypatch: MonkeyPatch) -> datetime:
     class MockDatetime(datetime):
         @classmethod
-        def utcnow(cls) -> datetime:  # type: ignore
+        def now(cls, tz) -> datetime:  # type: ignore
             return datetime(2019, 3, 4)
 
     monkeypatch.setattr(quart_rate_limiter, "datetime", MockDatetime)
-    return MockDatetime.utcnow()
+    return MockDatetime.now(timezone.utc)
 
 
 async def _skip_function() -> bool:

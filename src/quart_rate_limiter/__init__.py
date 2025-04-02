@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 from flask.sansio.blueprints import Blueprint
@@ -10,6 +10,7 @@ from werkzeug.exceptions import TooManyRequests
 
 from .store import MemoryStore, RateLimiterStoreABC
 
+UTC = timezone.utc  # Replace with direct import when 3.9 EoL
 QUART_RATE_LIMITER_LIMITS_ATTRIBUTE = "_quart_rate_limiter_limits"
 QUART_RATE_LIMITER_EXEMPT_ATTRIBUTE = "_quart_rate_limiter_exempt"
 
@@ -282,7 +283,7 @@ class RateLimiter:
             await self._update_limits(endpoint, rate_limits)
 
     async def _raise_on_rejection(self, endpoint: str, rate_limits: List[RateLimit]) -> None:
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         for rate_limit in rate_limits:
             key = await self._create_key(endpoint, rate_limit)
             # This is the GCRA rate limiting system and tat stands for
@@ -297,7 +298,7 @@ class RateLimiter:
     async def _update_limits(self, endpoint: str, rate_limits: List[RateLimit]) -> None:
         # Update the tats for all the rate limits. This must only
         # occur if no limit rejects the request.
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         for rate_limit in rate_limits:
             key = await self._create_key(endpoint, rate_limit)
             tat = max(await self.store.get(key, now), now)
@@ -318,7 +319,7 @@ class RateLimiter:
             pass  # No rate limits
         else:
             key = await self._create_key(endpoint, min_limit)
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             tat = max(await self.store.get(key, now), now)
             separation = (tat - now).total_seconds()
             remaining = int((min_limit.period.total_seconds() - separation) / min_limit.inverse)
