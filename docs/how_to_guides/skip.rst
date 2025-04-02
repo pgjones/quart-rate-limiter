@@ -20,3 +20,20 @@ Auth<https://github.com/pgjones/quart-auth>`_,
             RateLimit(20, timedelta(seconds=1)),
         ],
     )
+
+Skipping static routes
+----------------------
+
+Another common use case is to skip limits for the static serving
+routes via the following,
+
+.. code-block:: python
+
+    from quart import request
+
+    from quart_auth import RateLimiter
+
+    async def _skip_static() -> bool:
+        return request.endpoint.endswith("static")
+
+    RateLimiter(app, skip_function=_skip_static)
