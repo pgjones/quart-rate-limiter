@@ -33,6 +33,7 @@ requires-python = ">=3.9"
 [project.optional-dependencies]
 docs = ["pydata_sphinx_theme"]
 redis = ["redis >= 4.4.0"]
+valkey = ["valkey"]
 
 [tool.black]
 line-length = 100

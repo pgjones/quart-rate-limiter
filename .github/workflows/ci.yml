@@ -56,3 +56,24 @@ jobs:
       - run: pip install tox
 
       - run: tox -e redis
+
+  valkey-tox:
+    runs-on: ubuntu-latest
+
+    container: python:3.13
+
+    services:
+      valkey:
+        image: valkey/valkey
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: pip install tox
+
+      - run: tox -e valkey

@@ -11,10 +11,12 @@ import quart_rate_limiter
 from quart_rate_limiter import rate_limit, RateLimiter
 from quart_rate_limiter.redis_store import RedisStore
 from quart_rate_limiter.store import MemoryStore, RateLimiterStoreABC
+from quart_rate_limiter.valkey_store import ValkeyStore
 
 
 def pytest_addoption(parser: Parser) -> None:
     parser.addoption("--redis-host", action="store", default=None)
+    parser.addoption("--valkey-host", action="store", default=None)
 
 
 @pytest.fixture(name="fixed_datetime")
@@ -44,10 +46,13 @@ async def _app(pytestconfig: Config) -> AsyncGenerator[Quart, None]:
 
     store: RateLimiterStoreABC
     redis_host = pytestconfig.getoption("redis_host")
-    if redis_host is None:
-        store = MemoryStore()
-    else:
+    valkey_host = pytestconfig.getoption("valkey_host")
+    if redis_host is not None:
         store = RedisStore(f"redis://{redis_host}")
+    elif valkey_host is not None:
+        store = ValkeyStore(f"redis://{valkey_host}")
+    else:
+        store = MemoryStore()
 
     RateLimiter(app, store=store, skip_function=_skip_function)
     async with app.test_app():

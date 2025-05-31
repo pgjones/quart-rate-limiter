@@ -7,8 +7,12 @@ multiple instances together will allow a higher overall limit. To
 avoid this you can centralise the store so that all instances use the
 same store and hence limits.
 
+Redis store
+-----------
+
 Quart-Rate-Limiter has a builtin interface to use a redis store which
-can be used as so,
+can be used after installing Quart-Rate-Limiter with the ``redis``
+extension, ``pip install quart-rate-limiter[redis]``, as so,
 
 .. code-block:: python
 
@@ -16,6 +20,21 @@ can be used as so,
 
     redis_store = RedisStore("address")
     RateLimiter(app, store=redis_store)
+
+
+Valkey store
+------------
+
+Quart-Rate-Limiter has a builtin interface to use a valkey store which
+can be used after installing Quart-Rate-Limiter with the ``valkey``
+extension, ``pip install quart-rate-limiter[valkey]``, as so,
+
+.. code-block:: python
+
+    from quart_rate_limiter.valkey_store import valkeyStore
+
+    valkey_store = valkeyStore("address")
+    RateLimiter(app, store=valkey_store)
 
 Custom store
 ------------
