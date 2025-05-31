@@ -31,9 +31,9 @@ extension, ``pip install quart-rate-limiter[valkey]``, as so,
 
 .. code-block:: python
 
-    from quart_rate_limiter.valkey_store import valkeyStore
+    from quart_rate_limiter.valkey_store import ValkeyStore
 
-    valkey_store = valkeyStore("address")
+    valkey_store = ValkeyStore("address")
     RateLimiter(app, store=valkey_store)
 
 Custom store
