@@ -1,3 +1,9 @@
+0.12.0 2025-05-31
+-----------------
+
+* Support Valkey as an alternative store.
+* Switch from utcnow to now(UTC) to remove deprecation warnings.
+
 0.11.0 2024-12-24
 -----------------
 
