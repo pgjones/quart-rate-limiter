@@ -24,7 +24,7 @@ def _fixed_datetime(monkeypatch: MonkeyPatch) -> datetime:
     class MockDatetime(datetime):
         @classmethod
         def now(cls, tz) -> datetime:  # type: ignore
-            return datetime(2019, 3, 4)
+            return datetime(2019, 3, 4, tzinfo=tz)
 
     monkeypatch.setattr(quart_rate_limiter, "datetime", MockDatetime)
     return MockDatetime.now(timezone.utc)
