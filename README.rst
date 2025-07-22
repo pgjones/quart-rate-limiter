@@ -76,7 +76,7 @@ Quart-Rate-Limiter is developed on `GitHub
 <https://github.com/pgjones/quart-rate-limiter>`_. You are very welcome to
 open `issues <https://github.com/pgjones/quart-rate-limiter/issues>`_ or
 propose `merge requests
-<https://github.com/pgjones/quart-rate-limiter/merge_requests>`_.
+<https://github.com/pgjones/quart-rate-limiter/pulls>`_.
 
 Testing
 ~~~~~~~
