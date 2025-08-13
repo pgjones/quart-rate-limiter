@@ -1,3 +1,11 @@
+0.12.1 2025-08-13
+-----------------
+
+* Enforce timezone-aware datetimes fixing a bug with the migration to
+  0.12.0.
+* Bugfix round the retry times up.
+
+
 0.12.0 2025-05-31
 -----------------
 
