@@ -1,6 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from math import ceil
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 from flask.sansio.blueprints import Blueprint
@@ -296,7 +297,7 @@ class RateLimiter:
             max_interval = rate_limit.period.total_seconds() - rate_limit.inverse
             if separation > max_interval:
                 retry_after = ((tat - timedelta(seconds=max_interval)) - now).total_seconds()
-                raise RateLimitExceeded(int(retry_after))
+                raise RateLimitExceeded(int(ceil(retry_after)))
 
     async def _update_limits(self, endpoint: str, rate_limits: List[RateLimit]) -> None:
         # Update the tats for all the rate limits. This must only
@@ -334,7 +335,7 @@ class RateLimiter:
             remaining = int((min_limit.period.total_seconds() - separation) / min_limit.inverse)
             response.headers["RateLimit-Limit"] = str(min_limit.count)
             response.headers["RateLimit-Remaining"] = str(remaining)
-            response.headers["RateLimit-Reset"] = str(int(separation))
+            response.headers["RateLimit-Reset"] = str(int(ceil(separation)))
 
         return response
 
