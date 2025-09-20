@@ -72,7 +72,7 @@ module =["redis.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-addopts = "--no-cov-on-fail --showlocals --strict-markers"
+addopts = "--showlocals --strict-markers"
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 testpaths = ["tests"]

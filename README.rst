@@ -5,8 +5,8 @@ Quart-Rate-Limiter
 
 Quart-Rate-Limiter is an extension for `Quart
 <https://github.com/pgjones/quart>`_ to allow for rate limits to be
-defined and enforced on a per route basis. The 429 error response
-includes a `RFC7231
+defined and enforced on a per route basis and for WebSocket connections.
+The 429 error response includes a `RFC7231
 <https://tools.ietf.org/html/rfc7231#section-7.1.3>`_ compliant
 ``Retry-After`` header and the successful responses contain headers
 compliant with the `RateLimit Header Fields for HTTP
@@ -68,6 +68,40 @@ their IP,
 
 The ``key_function`` is a coroutine function to allow session lookups
 if appropriate.
+
+WebSocket Rate Limiting
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Quart-Rate-Limiter also supports rate limiting for WebSocket connections,
+similar to fastapi-limiter's WebSocketRateLimiter:
+
+.. code-block:: python
+
+    from quart_rate_limiter import RateLimiter, WebSocketRateLimiter, WebSocketRateLimitException
+    from quart_rate_limiter.redis_store import RedisStore
+
+    # Configure global rate limiter with Redis
+    redis_store = RedisStore("redis://localhost:6379/0")
+    RateLimiter(app, store=redis_store)
+
+    @app.websocket('/ws')
+    async def websocket_endpoint():
+        # Automatically uses the same Redis store as the global RateLimiter
+        ratelimit = WebSocketRateLimiter(times=1, seconds=5)
+
+        await websocket.accept()
+        while True:
+            try:
+                data = await websocket.receive()
+                await ratelimit(websocket, context_key=data)  # context_key is optional
+                await websocket.send(f"Hello, world! You sent: {data}")
+            except WebSocketRateLimitException:
+                await websocket.send("Rate limited! Please slow down.")
+
+WebSocket rate limiting automatically uses the same storage backend as your
+global ``RateLimiter`` configuration, ensuring consistency across HTTP and
+WebSocket rate limiting. It supports all the same storage backends (Memory, Redis, Valkey)
+and key functions as HTTP route rate limiting.
 
 Contributing
 ------------

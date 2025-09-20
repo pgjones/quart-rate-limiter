@@ -11,3 +11,4 @@ How to guides
    key.rst
    skip.rst
    store.rst
+   websockets.rst
