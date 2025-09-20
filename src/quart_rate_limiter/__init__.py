@@ -5,7 +5,7 @@ from math import ceil
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 from flask.sansio.blueprints import Blueprint
-from quart import current_app, Quart, request, Response
+from quart import current_app, Quart, request, Response, websocket
 from quart.typing import RouteCallable, WebsocketCallable
 from werkzeug.exceptions import TooManyRequests
 
@@ -390,7 +390,6 @@ class RateLimiter:
 async def websocket_key_function() -> str:
     """Default key function for WebSocket connections using remote address."""
     try:
-        from quart import websocket
         return websocket.remote_addr
     except ImportError:
         # Fallback if websocket context is not available
