@@ -54,6 +54,58 @@ async def _app(pytestconfig: Config) -> AsyncGenerator[Quart, None]:
     else:
         store = MemoryStore()
 
-    RateLimiter(app, store=store, skip_function=_skip_function)
+    rate_limiter = RateLimiter(app, store=store, skip_function=_skip_function)
+    app.rate_limiter = rate_limiter  # Store reference for tests
+    async with app.test_app():
+        yield app
+
+
+@pytest.fixture(name="app_with_redis", scope="function")
+async def _app_with_redis() -> AsyncGenerator[Quart, None]:
+    """App fixture specifically configured with Redis store for WebSocket tests."""
+    app = Quart(__name__)
+
+    # Use a mock Redis store for testing
+    try:
+        from unittest.mock import AsyncMock
+        redis_store = RedisStore("redis://localhost:6379/0")
+
+        # Mock the redis client before init_app to prevent real connection attempts
+        redis_store._redis = AsyncMock()
+        redis_store._redis.get = AsyncMock(return_value=None)
+        redis_store._redis.set = AsyncMock()
+        redis_store._redis.close = AsyncMock()
+        redis_store._redis.aclose = AsyncMock()
+
+        rate_limiter = RateLimiter(app, store=redis_store)
+        app.rate_limiter = rate_limiter
+
+        # Override the store's before_serving and after_serving to prevent real Redis operations
+        redis_store.before_serving = AsyncMock()
+        redis_store.after_serving = AsyncMock()
+
+        async with app.test_app():
+            yield app
+    except ImportError:
+        pytest.skip("Redis not available")
+
+
+@pytest.fixture(name="app_with_memory", scope="function")
+async def _app_with_memory() -> AsyncGenerator[Quart, None]:
+    """App fixture specifically configured with MemoryStore for WebSocket tests."""
+    app = Quart(__name__)
+
+    memory_store = MemoryStore()
+    rate_limiter = RateLimiter(app, store=memory_store)
+    app.rate_limiter = rate_limiter
+    async with app.test_app():
+        yield app
+
+
+@pytest.fixture(name="app_no_rate_limiter", scope="function")
+async def _app_no_rate_limiter() -> AsyncGenerator[Quart, None]:
+    """App fixture with no RateLimiter configured for testing fallback behavior."""
+    app = Quart(__name__)
+
     async with app.test_app():
         yield app

@@ -5,11 +5,26 @@ from math import ceil
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 from flask.sansio.blueprints import Blueprint
-from quart import current_app, Quart, request, Response
+from quart import current_app, Quart, request, Response, websocket
 from quart.typing import RouteCallable, WebsocketCallable
 from werkzeug.exceptions import TooManyRequests
 
 from .store import MemoryStore, RateLimiterStoreABC
+
+__all__ = [
+    "RateLimitExceeded",
+    "WebSocketRateLimitException",
+    "RateLimit",
+    "RateLimiter",
+    "WebSocketRateLimiter",
+    "rate_limit",
+    "rate_exempt",
+    "limit_blueprint",
+    "remote_addr_key",
+    "websocket_key_function",
+    "MemoryStore",
+    "RateLimiterStoreABC",
+]
 
 UTC = timezone.utc  # Replace with direct import when 3.9 EoL
 QUART_RATE_LIMITER_LIMITS_ATTRIBUTE = "_quart_rate_limiter_limits"
@@ -34,6 +49,18 @@ class RateLimitExceeded(TooManyRequests):
         headers = super().get_headers(*args)
         headers.append(("Retry-After", str(self.retry_after)))
         return headers
+
+
+class WebSocketRateLimitException(Exception):
+    """Exception raised when WebSocket rate limit is exceeded.
+
+    Arguments:
+        retry_after: Seconds left till the remaining resets to the limit.
+    """
+
+    def __init__(self, retry_after: int) -> None:
+        self.retry_after = retry_after
+        super().__init__(f"WebSocket rate limit exceeded. Retry after {retry_after} seconds.")
 
 
 @dataclass
@@ -209,6 +236,11 @@ class RateLimiter:
     The limiter itself can be customised using the following
     arguments,
 
+    When a RateLimiter is initialized, it automatically sets the
+    ``QUART_RATE_LIMITER_STORE`` configuration key to allow
+    ``WebSocketRateLimiter`` instances to automatically use the same
+    store for consistent rate limiting across HTTP and WebSocket connections.
+
     Arguments:
         key_function: A coroutine function that returns a unique key
             to identify the user agent.
@@ -260,6 +292,8 @@ class RateLimiter:
         app.before_serving(self._before_serving)
         app.after_serving(self._after_serving)
         app.config.setdefault("QUART_RATE_LIMITER_ENABLED", enabled)
+        # Store the rate limiter store in app config for WebSocket access
+        app.config["QUART_RATE_LIMITER_STORE"] = self.store
 
     async def _before_serving(self) -> None:
         await self.store.before_serving()
@@ -351,3 +385,137 @@ class RateLimiter:
             return False
         else:
             return await skip_function()
+
+
+async def websocket_key_function() -> str:
+    """Default key function for WebSocket connections using remote address."""
+    try:
+        return websocket.remote_addr
+    except ImportError:
+        # Fallback if websocket context is not available
+        return "default"
+
+
+class WebSocketRateLimiter:
+    """A WebSocket rate limiter that can be used to limit WebSocket message rates.
+
+    Similar to fastapi-limiter's WebSocketRateLimiter, this class provides
+    rate limiting for WebSocket connections using the same GCRA algorithm
+    as the main RateLimiter.
+
+    By default, it automatically uses the same store as the global RateLimiter
+    if one is configured. You can override this by providing a specific store.
+
+    .. code-block:: python
+
+        from quart import websocket
+        from quart_rate_limiter import RateLimiter, WebSocketRateLimiter
+        from quart_rate_limiter.redis_store import RedisStore
+
+        # Global configuration - WebSocket rate limiter will use this automatically
+        redis_store = RedisStore("redis://localhost:6379/0")
+        RateLimiter(app, store=redis_store)
+
+        @app.websocket('/ws')
+        async def websocket_endpoint():
+            # Uses the Redis store automatically
+            ratelimit = WebSocketRateLimiter(times=1, seconds=5)
+
+            while True:
+                try:
+                    data = await websocket.receive()
+                    await ratelimit(websocket, context_key=data)  # context_key is optional
+                    await websocket.send("Hello, world")
+                except WebSocketRateLimitException:
+                    await websocket.send("Rate limited")
+
+    Arguments:
+        times: The maximum number of messages allowed.
+        seconds: The time period in seconds.
+        minutes: The time period in minutes (alternative to seconds).
+        hours: The time period in hours (alternative to seconds/minutes).
+        key_function: A coroutine function that returns a unique key
+            to identify the WebSocket connection.
+        store: The store that contains the theoretical arrival times by key.
+            If None, will automatically use the global RateLimiter's store,
+            or fall back to MemoryStore if no global store is configured.
+    """
+
+    def __init__(
+        self,
+        times: int,
+        seconds: Optional[float] = None,
+        minutes: Optional[float] = None,
+        hours: Optional[float] = None,
+        key_function: Optional[KeyCallable] = None,
+        store: Optional[RateLimiterStoreABC] = None,
+    ) -> None:
+        period_seconds = 0.0
+        if seconds is not None:
+            period_seconds += seconds
+        if minutes is not None:
+            period_seconds += minutes * 60
+        if hours is not None:
+            period_seconds += hours * 3600
+
+        if period_seconds <= 0:
+            raise ValueError("At least one of seconds, minutes, or hours must be provided and positive")
+
+        self.rate_limit = RateLimit(
+            count=times,
+            period=timedelta(seconds=period_seconds),
+            key_function=key_function
+        )
+
+        if store is None:
+            try:
+                global_store = current_app.config.get("QUART_RATE_LIMITER_STORE")
+                if global_store is not None:
+                    self.store = global_store
+                else:
+                    self.store = MemoryStore()
+            except RuntimeError:
+                # No application context available
+                self.store = MemoryStore()
+        else:
+            self.store = store
+
+        self.key_function = key_function or websocket_key_function
+
+    async def __call__(
+        self,
+        websocket_connection: Any,
+        context_key: Optional[str] = None
+    ) -> None:
+        """Check and apply rate limiting for a WebSocket message.
+
+        Arguments:
+            websocket_connection: The WebSocket connection object (usually from quart.websocket).
+            context_key: Optional context key to include in the rate limit key generation.
+
+        Raises:
+            WebSocketRateLimitException: When the rate limit is exceeded.
+        """
+        now = datetime.now(UTC)
+
+        base_key = await self.key_function()
+        endpoint_key = "websocket"  # Generic endpoint for websockets
+        if context_key:
+            endpoint_key = f"websocket-{context_key}"
+
+        key = f"websocket-{endpoint_key}-{self.rate_limit.key}-{base_key}"
+
+        stored = await self.store.get(key, now)
+        if stored.tzinfo is None:
+            stored = stored.astimezone(UTC)
+
+        tat = max(stored, now)
+        separation = (tat - now).total_seconds()
+        max_interval = self.rate_limit.period.total_seconds() - self.rate_limit.inverse
+
+        if separation > max_interval:
+            retry_after = ((tat - timedelta(seconds=max_interval)) - now).total_seconds()
+            raise WebSocketRateLimitException(int(ceil(retry_after)))
+
+        new_tat = max(tat, now) + timedelta(seconds=self.rate_limit.inverse)
+        await self.store.set(key, new_tat)

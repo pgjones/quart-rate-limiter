@@ -1,3 +1,12 @@
+0.13.0 TBD
+-----------
+
+* Add WebSocket rate limiting support with ``WebSocketRateLimiter`` class.
+* Add ``WebSocketRateLimitException`` for WebSocket-specific rate limit errors.
+* Support same storage backends (Memory, Redis, Valkey) for WebSocket rate limiting.
+* Add ``websocket_key_function`` for default WebSocket connection identification.
+* Compatible API with fastapi-limiter's WebSocketRateLimiter.
+
 0.12.1 2025-08-13
 -----------------
 
