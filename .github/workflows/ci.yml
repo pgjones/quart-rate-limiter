@@ -6,10 +6,18 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   tox:
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    container: python:${{ matrix.python }}
+
     strategy:
       fail-fast: false
       matrix:
@@ -26,15 +34,9 @@ jobs:
           - {name: 'package', python: '3.14', tox: package}
 
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - uses: pgjones/actions/tox@dbbee601c084d000c4fc711d4b27cb306e15ead1 # v1
         with:
-          python-version: ${{ matrix.python }}
-
-      - run: pip install tox
-
-      - run: tox -e ${{ matrix.tox }}
+          environment: ${{ matrix.tox }}
 
   redis-tox:
     runs-on: ubuntu-latest
@@ -43,7 +45,7 @@ jobs:
 
     services:
       redis:
-        image: redis
+        image: redis:8
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
@@ -51,7 +53,9 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
 
       - run: pip install tox
 
@@ -64,7 +68,7 @@ jobs:
 
     services:
       valkey:
-        image: valkey/valkey
+        image: valkey/valkey:9
         options: >-
           --health-cmd "valkey-cli ping"
           --health-interval 10s
@@ -72,8 +76,20 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
 
       - run: pip install tox
 
       - run: tox -e valkey
+
+  zizmor:
+    name: Zizmor
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: pgjones/actions/zizmor@dbbee601c084d000c4fc711d4b27cb306e15ead1 # v1
