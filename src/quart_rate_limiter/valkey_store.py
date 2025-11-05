@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 import valkey.asyncio as valkey
 
@@ -16,7 +16,7 @@ class ValkeyStore(RateLimiterStoreABC):
     """
 
     def __init__(self, address: str, **kwargs: Any) -> None:
-        self._valkey: Optional[valkey.Valkey] = None
+        self._valkey: valkey.Valkey | None = None
         self._valkey_arguments = (address, kwargs)
 
     async def before_serving(self) -> None:

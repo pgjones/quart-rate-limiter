@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from redis import asyncio as aioredis
 
@@ -16,7 +16,7 @@ class RedisStore(RateLimiterStoreABC):
     """
 
     def __init__(self, address: str, **kwargs: Any) -> None:
-        self._redis: Optional[aioredis.Redis] = None
+        self._redis: aioredis.Redis | None = None
         self._redis_arguments = (address, kwargs)
 
     async def before_serving(self) -> None:

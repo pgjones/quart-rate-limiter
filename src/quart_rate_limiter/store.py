@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
-from typing import Dict
 
 
 class RateLimiterStoreABC(metaclass=ABCMeta):
@@ -43,7 +42,7 @@ class MemoryStore(RateLimiterStoreABC):
     """An in memory store of rate limits."""
 
     def __init__(self) -> None:
-        self._tats: Dict[str, datetime] = {}
+        self._tats: dict[str, datetime] = {}
 
     async def get(self, key: str, default: datetime) -> datetime:
         return self._tats.get(key, default)

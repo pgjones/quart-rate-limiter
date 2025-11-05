@@ -1,5 +1,5 @@
+from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta, timezone
-from typing import AsyncGenerator
 
 import pytest
 from _pytest.config import Config

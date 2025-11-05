@@ -1,8 +1,9 @@
 from collections import defaultdict
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from math import ceil
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import Any, TypeVar
 
 from flask.sansio.blueprints import Blueprint
 from quart import current_app, Quart, request, Response
@@ -11,7 +12,7 @@ from werkzeug.exceptions import TooManyRequests
 
 from .store import MemoryStore, RateLimiterStoreABC
 
-UTC = timezone.utc  # Replace with direct import when 3.9 EoL
+UTC = timezone.utc  # Replace with direct import when 3.10 EoL
 QUART_RATE_LIMITER_LIMITS_ATTRIBUTE = "_quart_rate_limiter_limits"
 QUART_RATE_LIMITER_EXEMPT_ATTRIBUTE = "_quart_rate_limiter_exempt"
 
@@ -30,7 +31,7 @@ class RateLimitExceeded(TooManyRequests):
         super().__init__()
         self.retry_after = retry_after
 
-    def get_headers(self, *args: Any) -> List[Tuple[str, str]]:
+    def get_headers(self, *args: Any) -> list[tuple[str, str]]:
         headers = super().get_headers(*args)
         headers.append(("Retry-After", str(self.retry_after)))
         return headers
@@ -40,8 +41,8 @@ class RateLimitExceeded(TooManyRequests):
 class RateLimit:
     count: int
     period: timedelta
-    key_function: Optional[KeyCallable] = None
-    skip_function: Optional[SkipCallable] = None
+    key_function: KeyCallable | None = None
+    skip_function: SkipCallable | None = None
 
     @property
     def inverse(self) -> float:
@@ -52,16 +53,16 @@ class RateLimit:
         return f"{self.count}-{self.period.total_seconds()}"
 
 
-T = TypeVar("T", bound=Union[RouteCallable, WebsocketCallable])
+T = TypeVar("T", bound=RouteCallable | WebsocketCallable)
 
 
 def rate_limit(
-    limit: Optional[int] = None,
-    period: Optional[timedelta] = None,
-    key_function: Optional[KeyCallable] = None,
-    skip_function: Optional[SkipCallable] = None,
+    limit: int | None = None,
+    period: timedelta | None = None,
+    key_function: KeyCallable | None = None,
+    skip_function: SkipCallable | None = None,
     *,
-    limits: Optional[List[RateLimit]] = None,
+    limits: list[RateLimit] | None = None,
 ) -> Callable[[T], T]:
     """A decorator to add a rate limit marker to the route.
 
@@ -133,12 +134,12 @@ U = TypeVar("U", bound=Blueprint)
 
 def limit_blueprint(
     blueprint: U,
-    limit: Optional[int] = None,
-    period: Optional[timedelta] = None,
-    key_function: Optional[KeyCallable] = None,
-    skip_function: Optional[SkipCallable] = None,
+    limit: int | None = None,
+    period: timedelta | None = None,
+    key_function: KeyCallable | None = None,
+    skip_function: SkipCallable | None = None,
     *,
-    limits: Optional[List[RateLimit]] = None,
+    limits: list[RateLimit] | None = None,
 ) -> U:
     """A function to add a rate limit marker to the blueprint.
 
@@ -223,10 +224,10 @@ class RateLimiter:
 
     def __init__(
         self,
-        app: Optional[Quart] = None,
+        app: Quart | None = None,
         key_function: KeyCallable = remote_addr_key,
-        store: Optional[RateLimiterStoreABC] = None,
-        default_limits: List[RateLimit] = None,
+        store: RateLimiterStoreABC | None = None,
+        default_limits: list[RateLimit] = None,
         enabled: bool = True,
         skip_function: SkipCallable = None,
     ) -> None:
@@ -239,14 +240,14 @@ class RateLimiter:
             self.store = store
 
         self._default_rate_limits = default_limits or []
-        self._blueprint_rate_limits: Dict[str, List[RateLimit]] = defaultdict(list)
+        self._blueprint_rate_limits: dict[str, list[RateLimit]] = defaultdict(list)
 
         if app is not None:
             self.init_app(app, enabled=enabled)
 
     def _get_limits_for_view_function(
-        self, view_func: Callable, blueprint: Optional[Blueprint]
-    ) -> List[RateLimit]:
+        self, view_func: Callable, blueprint: Blueprint | None
+    ) -> list[RateLimit]:
         if getattr(view_func, QUART_RATE_LIMITER_EXEMPT_ATTRIBUTE, False):
             return []
         else:
@@ -283,7 +284,7 @@ class RateLimiter:
             await self._raise_on_rejection(endpoint, rate_limits)
             await self._update_limits(endpoint, rate_limits)
 
-    async def _raise_on_rejection(self, endpoint: str, rate_limits: List[RateLimit]) -> None:
+    async def _raise_on_rejection(self, endpoint: str, rate_limits: list[RateLimit]) -> None:
         now = datetime.now(UTC)
         for rate_limit in rate_limits:
             key = await self._create_key(endpoint, rate_limit)
@@ -299,7 +300,7 @@ class RateLimiter:
                 retry_after = ((tat - timedelta(seconds=max_interval)) - now).total_seconds()
                 raise RateLimitExceeded(int(ceil(retry_after)))
 
-    async def _update_limits(self, endpoint: str, rate_limits: List[RateLimit]) -> None:
+    async def _update_limits(self, endpoint: str, rate_limits: list[RateLimit]) -> None:
         # Update the tats for all the rate limits. This must only
         # occur if no limit rejects the request.
         now = datetime.now(UTC)
