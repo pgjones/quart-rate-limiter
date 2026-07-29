@@ -12,3 +12,4 @@ docs/reference/source/
 .pytest_cache/
 dist/
 pdm.lock
+/.idea

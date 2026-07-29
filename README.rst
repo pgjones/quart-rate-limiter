@@ -69,6 +69,33 @@ their IP,
 The ``key_function`` is a coroutine function to allow session lookups
 if appropriate.
 
+Limiting by response status
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A route limit is spent by every request that reaches the route, however
+that request turns out. It cannot see a request that matched no route,
+as there is no view function to decorate, and it charges a refused
+request no more than a successful one. To limit on the outcome instead,
+
+.. code-block:: python
+
+    from quart_rate_limiter import StatusLimit
+
+    RateLimiter(
+        app,
+        status_limits=[
+            StatusLimit("not_found", (404, 405), [RateLimit(20, timedelta(minutes=1))]),
+            StatusLimit("auth", (401, 403), [RateLimit(5, timedelta(minutes=1))]),
+            StatusLimit("server_error", range(500, 600), [RateLimit(10, timedelta(minutes=1))]),
+        ],
+    )
+
+These share a single bucket per client rather than one per endpoint, as
+a budget keyed by path would never be repeated by an agent that invents
+a new URL each time. ``status_codes`` also takes a predicate, and
+``deny_early=True`` moves the check ahead of the view for cases where
+running it is itself the attack, such as verifying a password.
+
 WebSocket Rate Limiting
 ~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -9,6 +9,7 @@ How to guides
    exempt.rst
    global_limits.rst
    key.rst
+   status_limits.rst
    skip.rst
    store.rst
    websockets.rst

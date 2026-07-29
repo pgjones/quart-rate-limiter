@@ -1,3 +1,25 @@
+0.13.1 TBD
+-----------
+
+* Add ``StatusLimit`` and the ``status_limits`` argument, to limit on the
+  status code a request produces rather than the route it reached. This
+  covers what a route limit cannot see: requests that match no route,
+  which previously had no view function to carry limits and were served
+  unlimited, and requests that are refused, which previously cost a
+  client no more than requests that succeed.
+* ``StatusLimit`` accepts a collection of status codes, a range or a
+  predicate, and shares one bucket per client across every path.
+* Add ``deny_early`` to ``StatusLimit``, moving the check ahead of
+  dispatch so that an over budget client is turned away without the view
+  running.
+* Reject an over budget unrouted request before dispatch, the status it
+  will carry being already known from the routing exception. Such a
+  request no longer has an error page built for a response that is then
+  discarded, halving what the app's error handler is entered for.
+* Add ``rejection_handler`` to supply a cheap response for the one path
+  that cannot be predicted, a route that runs and then refuses, where
+  the error handler would otherwise be entered twice.
+
 0.13.0 TBD
 -----------
 
