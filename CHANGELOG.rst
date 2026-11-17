@@ -1,3 +1,9 @@
+0.13.0 2026-11-17
+-----------------
+
+* Bugfix ensure redis/valkey set keys expire.
+* Support Python 3.15, drop Python 3.10.
+
 0.12.1 2025-08-13
 -----------------
 
