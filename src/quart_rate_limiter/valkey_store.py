@@ -30,7 +30,7 @@ class ValkeyStore(RateLimiterStoreABC):
             return datetime.fromtimestamp(float(result))
 
     async def set(self, key: str, tat: datetime) -> None:
-        await self._valkey.set(key, tat.timestamp())
+        await self._valkey.set(key, tat.timestamp(), pxat=tat)
 
     async def after_serving(self) -> None:
         await self._valkey.aclose()

@@ -30,7 +30,7 @@ class RedisStore(RateLimiterStoreABC):
             return datetime.fromtimestamp(float(result))
 
     async def set(self, key: str, tat: datetime) -> None:
-        await self._redis.set(key, tat.timestamp())
+        await self._redis.set(key, tat.timestamp(), pxat=tat)
 
     async def after_serving(self) -> None:
         await self._redis.close()

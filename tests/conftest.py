@@ -1,13 +1,11 @@
 from collections.abc import AsyncGenerator
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 import pytest
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
-from _pytest.monkeypatch import MonkeyPatch
 from quart import Quart, request, ResponseReturnValue
 
-import quart_rate_limiter
 from quart_rate_limiter import rate_limit, RateLimiter
 from quart_rate_limiter.redis_store import RedisStore
 from quart_rate_limiter.store import MemoryStore, RateLimiterStoreABC
@@ -17,17 +15,6 @@ from quart_rate_limiter.valkey_store import ValkeyStore
 def pytest_addoption(parser: Parser) -> None:
     parser.addoption("--redis-host", action="store", default=None)
     parser.addoption("--valkey-host", action="store", default=None)
-
-
-@pytest.fixture(name="fixed_datetime")
-def _fixed_datetime(monkeypatch: MonkeyPatch) -> datetime:
-    class MockDatetime(datetime):
-        @classmethod
-        def now(cls, tz) -> datetime:  # type: ignore
-            return datetime(2019, 3, 4, tzinfo=tz)
-
-    monkeypatch.setattr(quart_rate_limiter, "datetime", MockDatetime)
-    return MockDatetime.now(timezone.utc)
 
 
 async def _skip_function() -> bool:

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 from quart import Blueprint, Quart, ResponseReturnValue
@@ -6,7 +6,7 @@ from quart import Blueprint, Quart, ResponseReturnValue
 from quart_rate_limiter import limit_blueprint, rate_exempt, RateLimit, RateLimiter
 
 
-async def test_rate_limit(app: Quart, fixed_datetime: datetime) -> None:
+async def test_rate_limit(app: Quart) -> None:
     test_client = app.test_client()
     response = await test_client.get("/rate_limit/")
     assert response.status_code == 200
@@ -20,7 +20,7 @@ async def test_rate_limit(app: Quart, fixed_datetime: datetime) -> None:
     assert response.headers["Content-Type"] == "text/html; charset=utf-8"
 
 
-async def test_rate_limit_unique_keys(app: Quart, fixed_datetime: datetime) -> None:
+async def test_rate_limit_unique_keys(app: Quart) -> None:
     test_client = app.test_client()
     response = await test_client.get("/rate_limit/", scope_base={"client": ("127.0.0.1",)})
     assert response.status_code == 200
@@ -46,7 +46,7 @@ def _app_default_limit() -> Quart:
     return app
 
 
-async def test_default_rate_limits(app_default_limit: Quart, fixed_datetime: datetime) -> None:
+async def test_default_rate_limits(app_default_limit: Quart) -> None:
     test_client = app_default_limit.test_client()
     response = await test_client.get("/")
     assert response.status_code == 200
@@ -70,7 +70,7 @@ async def test_rate_exempt(app_default_limit: Quart) -> None:
     assert response.status_code == 200
 
 
-async def test_rate_limit_skip_function(app: Quart, fixed_datetime: datetime) -> None:
+async def test_rate_limit_skip_function(app: Quart) -> None:
     test_client = app.test_client()
     response = await test_client.get("/rate_limit/", headers={"X-Skip": "True"})
     assert response.status_code == 200
@@ -95,7 +95,7 @@ def _app_blueprint_limit() -> Quart:
     return app
 
 
-async def test_blueprint_rate_limits(app_blueprint_limit: Quart, fixed_datetime: datetime) -> None:
+async def test_blueprint_rate_limits(app_blueprint_limit: Quart) -> None:
     test_client = app_blueprint_limit.test_client()
     response = await test_client.get("/")
     assert response.status_code == 200
